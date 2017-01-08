@@ -5,8 +5,8 @@ interpreter.
 
 To run (it will use a sqlite database in dev):
 
-  $ pip3 install -r ./requirements.txt
-  $ python3 ./manage.py migrate
-  $ python3 ./manage.py runserver
+    $ pip3 install -r ./requirements.txt
+    $ python3 ./manage.py migrate
+    $ python3 ./manage.py runserver
 
 Then you should be able to connect to http://localhost:8000.
