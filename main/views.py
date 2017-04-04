@@ -16,6 +16,10 @@ def join(request):
     return render(request, 'main/join.html')
 
 
+def join_supporter(request):
+    return render(request, 'main/supporter.html')
+
+
 class Login(View):
     def get(self, request):
         return render(request, 'main/login.html')
