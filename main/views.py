@@ -12,6 +12,10 @@ def starting(request):
     return render(request, 'main/starting.html')
 
 
+def join(request):
+    return render(request, 'main/join.html')
+
+
 class Login(View):
     def get(self, request):
         return render(request, 'main/login.html')
@@ -31,4 +35,3 @@ class Login(View):
 def logout_view(request):
     logout(request)
     return redirect('/')
-
