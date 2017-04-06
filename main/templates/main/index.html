@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}UK Hackspace Foundation{% endblock %}
+{% block title %}Hackspace Foundation{% endblock %}
 
 {% block jumbotron %}
 <div class="jumbotron">
     <div class="container">
-        <h1>UK Hackspace Foundation</h1>
+        <h1>Hackspace Foundation</h1>
 
-        <p>The <b>UK Hackspace Foundation</b> is a non-profit, community organisation
+        <p>The <b>Hackspace Foundation</b> is a non-profit, community organisation
         dedicated to promoting and coordinating
         <a href="https://en.wikipedia.org/wiki/Hackerspace">hackspaces</a> in the UK.</p>
     </div>
@@ -21,16 +21,16 @@
             collaborate. A place to make your own projects a reality or help others
             with theirs.</p>
 
-        <p>There is a rich tradition of hackspaces worldwide. In January 2009, the UK
+        <p>There is a rich tradition of hackspaces worldwide. In January 2009, the
              Hackspace Foundation was formed in response to the lack of hackspaces in
-             the UK. Since then, we've helped groups in a number of communities start
-             creating their own spaces in their city.
+             the UK. Since then, we've helped many groups create their own spaces.
         </p>
     </div>
     <div class="col-md-6">
-        <p class="text-info">This year (2017) we intend to start allowing hackspaces to apply for formal membership of the foundation.
-           This will enable us to add some weight behind negotiations of supplier discounts, as well as
-           have a known source of knowledge/helpers on how to run a hackspace.
+        <p class="text-info">In 2017 we plan to start allowing hackspaces to apply for
+           membership of the foundation.
+           This will help us add some weight behind negotiations of supplier discounts, as well as
+           have a known source of advice on how to start and run a hackspace.
         </p>
     </div>
 </div>
@@ -41,7 +41,8 @@
 
 <div class="row">
     <div class="col-md-6">
-        <p>List of <b>{{ spaces|length }}</b> hackspace-like-entities as collated by the foundation. These are all the ones we've found / been
+        <p>We currently know of <b>{{ spaces|length }}</b> hackspace-like entities.
+            These are all the ones we've found / been
            told about. This is an informal process so it may well be out of date - if you spot any ommissions/corrections,
            please let us know via <a href="mailto:contact@hackspace.org.uk">email</a> or the <a href="https://forum.hackspace.org.uk">forum</a>.
         </p>
