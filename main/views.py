@@ -6,6 +6,7 @@ from django.http import JsonResponse
 import json
 from django.contrib.auth.decorators import login_required
 from .models import Space
+import sys
 
 def index(request):
     json_data = open('main/static/data.json')
@@ -27,6 +28,47 @@ def space_detail(request):
         'spaces': Space.objects.all()
     }
     return render(request, 'main/space_detail.html', context)
+
+def valueOrBlank(obj, attr, d):
+    if attr in obj:
+        return obj[attr]
+    else:
+        return d
+
+@login_required
+def import_spaces(request):
+    json_data = open('main/static/data.json')
+    data = json.load(json_data)
+
+    for s in data:
+
+        # see if record already exists
+        q = Space.objects.filter(name=s['name'])
+        if len(q) == 0:
+            srecord = Space(
+                name = valueOrBlank(s,'name',''),
+                longname = valueOrBlank(s,'longname',''),
+                town = valueOrBlank(s,'town',''),
+                country = valueOrBlank(s,'country',''),
+                region = valueOrBlank(s,'region',''),
+                have_premises = valueOrBlank(s,'havePremises','No')== 'Yes',
+                town_not_in_name = valueOrBlank(s,'townNotInName','No')== 'Yes',
+                address_first_line = valueOrBlank(s,'addressFirstLine',''),
+                postcode = valueOrBlank(s,'postcode',''),
+                lat = valueOrBlank(s,'lat',0.0),
+                lng = valueOrBlank(s,'lng',0.0),
+                main_website_url = valueOrBlank(s,'mainWebsiteUrl',''),
+                logo_image_url = valueOrBlank(s,'logoImageUrl',''),
+                status = valueOrBlank(s,'status',''),
+                classification = valueOrBlank(s,'classification','')
+            )
+            srecord.save()
+
+        #else
+            # existing record, do nothing for now
+
+
+    return redirect('/space_detail')
 
 
 def starting(request):
