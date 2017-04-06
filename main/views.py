@@ -4,6 +4,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.views import View
 from django.http import JsonResponse
 import json
+from django.contrib.auth.decorators import login_required
+from .models import Space
 
 def index(request):
     json_data = open('main/static/data.json')
@@ -17,6 +19,15 @@ def spaces(request):
     json_data = open('main/static/data.json')
     data = json.load(json_data)
     return JsonResponse({'spaces':data})
+
+
+@login_required
+def space_detail(request):
+    context = {
+        'spaces': Space.objects.all()
+    }
+    return render(request, 'main/space_detail.html', context)
+
 
 def starting(request):
     return render(request, 'main/starting.html')

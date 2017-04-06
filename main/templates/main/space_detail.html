@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}UK Hackspace Foundation{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <h2>Detailed Space Info</h2>
+
+    {% for space in spaces|dictsort:"name" %}
+        <div class="panel panel-default">
+            <div class="panel-heading">{{ space.name }}</div>
+            <div class="panel-body">
+                <dl class="dl-horizontal">
+                    <dt>Classification</dt> <dd>{{ space.classification }}</dd>
+                    <dt>Status</dt> <dd>{{ space.status }}</dd>
+                    <dt>Longname</dt> <dd>{{ space.longname }}</dd>
+                    <dt>Town</dt> <dd>{{ space.town }}</dd>
+                    <dt>Country</dt> <dd>{{ space.country }}</dd>
+                    <dt>Region</dt> <dd>{{ space.region }}</dd>
+                    <dt>Address</dt> <dd>{{ space.address_first_line }} <br> {{ space.postcode }}</dd>
+                    <dt>Lat/Lng</dt> <dd>{{ space.lat }}, {{space.lng}}</dd>
+                    <dt>URL</dt> <dd>{{ space.main_website_url }}</dd>
+                    <dt>Logo URL</dt> <dd>{{ space.logo_image_url }}</dd>
+                    <dt>Town Not In Name?</dt> <dd>{{ space.town_not_in_name }}</dd>
+                    <dt>Have Premises?</dt> <dd>{{ space.have_premises }}</dd>
+                    <dt>Changed Date</dt> <dd>{{ space.changed_date }}</dd>
+                </dl>
+            </div>
+        </div>
+    {% endfor %}
+
+</div>
+{% endblock %}
