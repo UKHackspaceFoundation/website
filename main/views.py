@@ -2,10 +2,15 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.views import View
-
+import json
 
 def index(request):
-    return render(request, 'main/index.html')
+    json_data = open('main/static/data.json')
+    data = json.load(json_data)
+    context = {
+        'spaces':data
+    }
+    return render(request, 'main/index.html', context)
 
 
 def starting(request):
@@ -18,7 +23,6 @@ def join(request):
 
 def join_supporter(request):
     return render(request, 'main/supporter.html')
-
 
 class Login(View):
     def get(self, request):

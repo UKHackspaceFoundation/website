@@ -32,6 +32,39 @@ dedicated to promoting and coordinating
 <p>A separate members list will be made once we have members.
 </p>
 
-{% include "main/listofspaces.html" %}
+{% if spaces %}
+    <div id="ListOfSpaces">
+    {% regroup spaces|dictsort:"name"|dictsort:"country" by country as spaces_by_country %}
+
+    {% for country in spaces_by_country %}
+        <h3>{{ country.grouper }}</h3>
+
+        {% regroup country.list|dictsort:"region" by region as spaces_by_region %}
+        {% for region in spaces_by_region %}
+            {% if region.grouper != country.grouper %}
+                <h4>{{ region.grouper }}</h4>
+            {% endif %}
+
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table table-condensed col-md-6">
+                        <tr> <th class="col-md-1">Logo</th> <th>Name</th> <th class="col-md-3">Status</th> </tr>
+
+                        {% for space in region.list %}
+                            <tr>
+                                <td>{% if space.logoImageUrl %}
+                                    <img src="{{ space.logoImageUrl }}">
+                                {% endif %}</td>
+                                <td><a href="{{ space.mainWebsiteUrl }}">{{ space.name }}</a></td>
+                                <td>{{ space.status }}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+        {% endfor %}
+    {% endfor %}
+    <div id="">
+{% endif %}
 
 {% endblock %}
