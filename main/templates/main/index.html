@@ -32,6 +32,9 @@ dedicated to promoting and coordinating
 <p>A separate members list will be made once we have members.
 </p>
 
+<div id="map" style="height: 400px;"></div>
+<p class="text-info">Note: Only active spaces are shown on the map</p>
+
 {% if spaces %}
     <div id="ListOfSpaces">
     {% regroup spaces|dictsort:"name"|dictsort:"country" by country as spaces_by_country %}
@@ -64,7 +67,69 @@ dedicated to promoting and coordinating
             </div>
         {% endfor %}
     {% endfor %}
-    <div id="">
 {% endif %}
 
+
+{% endblock %}
+
+{% block js %}
+    {{ block.super }}
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAMzvcKXd0kz91NK0jxhcmT4DJmYri7b1k&callback=initMap" async defer></script>
+
+    <script>
+    var data = [];
+    var map, infowindow;
+
+    function statusCode(a) {
+        return (a.status == 'Suspended' || a.status == 'Defunct') ? 1 : 0;
+    }
+
+    function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+         zoom: 5,
+          center: new google.maps.LatLng(54.850291,-5.0339395),
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        });
+
+        infowindow = new google.maps.InfoWindow();
+    }
+
+    function initMarkers() {
+        if (map === undefined) {
+            setTimeout(initMarkers, 100);
+            return;
+        }
+
+        var marker, i;
+
+        for (i = 0; i < data.length; i++) {
+          if (statusCode(data[i]) == 0) {
+              marker = new google.maps.Marker({
+                position: new google.maps.LatLng(data[i].lat, data[i].lng),
+                map: map
+              });
+              marker.setIcon('http://maps.google.com/mapfiles/ms/icons/green-dot.png');
+
+              google.maps.event.addListener(marker, 'click', (function(marker, i) {
+                return function() {
+                  var html = '';
+                  if (data[i].logoImageUrl !== undefined)
+                      html +='<img src="'+data[i].logoImageUrl+'" style="width:4em;"><br/>';
+                  html += '<a href="'+data[i].mainWebsiteUrl+'">' + data[i].name + '</a><br/>';
+                  html += '('+data[i].status + ')';
+
+                  infowindow.setContent(html);
+                  infowindow.open(map, marker);
+                }
+              })(marker, i));
+          }
+        }
+    }
+
+    // fetch data
+    $.getJSON("spaces", function(json) {
+        data = json.spaces;
+        initMarkers();
+    });
+    </script>
 {% endblock %}
