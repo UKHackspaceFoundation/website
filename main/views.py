@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.views import View
+from django.http import JsonResponse
 import json
 
 def index(request):
@@ -12,6 +13,10 @@ def index(request):
     }
     return render(request, 'main/index.html', context)
 
+def spaces(request):
+    json_data = open('main/static/data.json')
+    data = json.load(json_data)
+    return JsonResponse({'spaces':data})
 
 def starting(request):
     return render(request, 'main/starting.html')
