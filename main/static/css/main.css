@@ -6,3 +6,11 @@ body {
     display:box;
     width: 2em;
 }
+
+.navbar-brand img {
+    display:inline-block;
+    max-height:40px;
+    margin-top: -10px;
+    margin-bottom:-10px;
+    margin-right: 10px;
+}
