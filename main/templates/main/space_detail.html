@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container">
 
-    <h2>Detailed Space Info</h2>
+    <h2>Detailed Info for <span class="text-info">{{ spaces|length }}</span> Spaces</h2>
 
     <p><a href="/import_spaces" class="btn btn-primary">Import Spaces</a>
     </p>
@@ -22,7 +22,8 @@
                     <dt>Town</dt> <dd>{{ space.town }}</dd>
                     <dt>Country</dt> <dd>{{ space.country }}</dd>
                     <dt>Region</dt> <dd>{{ space.region }}</dd>
-                    <dt>Address</dt> <dd>{{ space.address_first_line }} <br> {{ space.postcode }}</dd>
+                    <dt>Address</dt> <dd>{{ space.address_first_line }}</dd>
+                    <dt>Postcode</dt> <dd>{{ space.postcode }}</dd>
                     <dt>Lat/Lng</dt> <dd>{{ space.lat }}, {{space.lng}}</dd>
                     <dt>URL</dt> <dd>{{ space.main_website_url }}</dd>
                     <dt>Logo URL</dt> <dd>{{ space.logo_image_url }}</dd>
