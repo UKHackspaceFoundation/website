@@ -12,5 +12,5 @@ urlpatterns = [
     url(r'^import_spaces$', views.import_spaces, name='import_spaces'),
     url(r'^login$', views.Login.as_view(), name='login'),
     url(r'^logout$', views.logout_view, name='logout'),
-    url(r'^hom/(?P<path>.*)$', views.hackspace_owners_manual, name='hackspace_owners_manual'),
+    url(r'^resources/(?P<path>.*)$', views.resources, name='resources'),
 ]

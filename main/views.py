@@ -106,7 +106,7 @@ def logout_view(request):
     return redirect('/')
 
 
-def hackspace_owners_manual(request, path):
+def resources(request, path):
 
     origpath = path
 
@@ -115,7 +115,7 @@ def hackspace_owners_manual(request, path):
         if path != '' and not path.endswith('/'):
             path += '/'
         path += 'README.md'
-        return redirect('/hom/' + path)
+        return redirect('/resources/' + path)
 
     rawurl = urlparse.urljoin('https://raw.githubusercontent.com/UKHackspaceFoundation/resources/master/', path);
 
@@ -142,4 +142,4 @@ def hackspace_owners_manual(request, path):
         'url':url,
         'md': markdown.markdown(r.text, safe_mode='escape')
     }
-    return render(request, 'main/hom.html', context)
+    return render(request, 'main/resources.html', context)
