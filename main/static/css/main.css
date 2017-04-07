@@ -20,6 +20,12 @@ h2 {
     margin-right: 10px;
 }
 
+@media (max-width:400px) {
+    .navbar-brand img {
+        max-height:30px;
+    }
+}
+
 .jumbotron {
     background-color: #2d4670;
     padding-top: 30px;
