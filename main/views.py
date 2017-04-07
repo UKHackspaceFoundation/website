@@ -140,6 +140,7 @@ def resources(request, path):
         'path':path.split('/'),
         'rawurl':rawurl,
         'url':url,
+        'imageBase': rawurl.rsplit('/', 1)[0] + '/',
         'md': markdown.markdown(r.text, safe_mode='escape')
     }
     return render(request, 'main/resources.html', context)

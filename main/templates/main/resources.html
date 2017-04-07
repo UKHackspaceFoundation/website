@@ -47,12 +47,13 @@
     <script src="{% static "js/jquery.toc.js" %}"></script>
 
     <script>
-        //$('body').scrollspy({ target: '#toc-navbar' });
-
-        $('body').on('activate.bs.scrollspy', function () {
-            console.log('boom');
+        // rewrite image urls with this base:
+        var githubBaseUrl = '{{ imageBase }}';
+        $('#markdown img').each( function(index, element) {
+            var src = $(this).attr("src");
+            if (!src.includes('://'))
+                $(this).attr("src", githubBaseUrl + src);
         });
-
     </script>
 
 {% endblock %}
