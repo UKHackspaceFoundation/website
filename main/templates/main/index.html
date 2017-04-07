@@ -7,11 +7,17 @@
     <div class="container">
         <h1>Hackspace Foundation</h1>
 
-        <p>The <b>Hackspace Foundation</b> is a non-profit, community organisation
+        <p>A non-profit, community organisation
         dedicated to promoting and coordinating
         <a href="https://en.wikipedia.org/wiki/Hackerspace">hackspaces</a> in and around the UK.</p>
     </div>
 </div>
+
+<div id="mapframe">
+    <div id="map"></div>
+    <p class="text-info">Note: Only active spaces are shown on the map</p>
+</div>
+
 {% endblock %}
 
 {% block content %}
@@ -49,9 +55,6 @@
         <p>A separate members list will be made once we have members.
         </p>
 
-
-        <div id="map"></div>
-        <p class="text-info">Note: Only active spaces are shown on the map</p>
     </div>
 
     <div class="col-md-6">
@@ -111,7 +114,7 @@
     function initMap() {
         map = new google.maps.Map(document.getElementById('map'), {
          zoom: 5,
-          center: new google.maps.LatLng(54.850291,-5.0339395),
+          center: new google.maps.LatLng(54.350291,-5.0339395),
           mapTypeId: google.maps.MapTypeId.ROADMAP,
           mapTypeControl:false,
           streetViewControl:false,

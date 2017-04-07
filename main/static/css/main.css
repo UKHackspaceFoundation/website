@@ -28,8 +28,9 @@ h2 {
 
 .jumbotron {
     background-color: #2d4670;
-    padding-top: 30px;
-    padding-bottom: 30px;
+    padding-top: 25px;
+    padding-bottom: 25px;
+    margin-bottom:0px;
 }
 
 .jumbotron h1 {
@@ -57,6 +58,18 @@ h2 {
     width: 2em;
 }
 
+#mapframe {
+    margin-bottom: 20px;
+}
+
 #map {
     height:400px;
+}
+
+#mapframe p {
+    position:relative;
+    left:10px;
+    top: -390px;
+    color:white;
+    z-index: 10;
 }
