@@ -9,25 +9,16 @@ from .models import Space
 import sys
 
 def index(request):
-    json_data = open('main/static/data.json')
-    data = json.load(json_data)
-    context = {
-        'spaces':data
-    }
-    return render(request, 'main/index.html', context)
+    return render(request, 'main/index.html', {'spaces': Space.objects.all()})
 
 def spaces(request):
-    json_data = open('main/static/data.json')
-    data = json.load(json_data)
-    return JsonResponse({'spaces':data})
+    results = Space.objects.all().values('name','lat','lng','main_website_url','logo_image_url','status')
+    return JsonResponse({'spaces': list(results)})
 
 
 @login_required
 def space_detail(request):
-    context = {
-        'spaces': Space.objects.all()
-    }
-    return render(request, 'main/space_detail.html', context)
+    return render(request, 'main/space_detail.html', {'spaces': Space.objects.all()})
 
 def valueOrBlank(obj, attr, d):
     if attr in obj:
