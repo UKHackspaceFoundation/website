@@ -1,5 +1,6 @@
 body {
   padding-top: 50px;
+  position:relative;
 }
 
 h2 {
@@ -72,4 +73,75 @@ h2 {
     top: -390px;
     color:white;
     z-index: 10;
+}
+
+
+#markdown {
+
+}
+
+#toc {
+    width:213px;
+
+}
+
+@media (max-width: 992px) {
+    #toc {
+        display:none;
+    }
+}
+
+#toc.affix {
+    position:fixed;
+    top:60px;
+}
+#toc.affix-top {
+
+}
+#toc.affix-bottom {
+    position:absolute;
+}
+
+
+
+#toc ul, #toc ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-weight:normal;
+    color: #888;
+}
+
+#toc li a {
+    margin:0;
+    font-size:13px;
+}
+
+#toc .nav>li>a {
+    padding: 4px 20px;
+    color: #888;
+    text-decoration: none;
+    display: block;
+}
+
+#toc .nav .nav>li>a {
+    padding-left:30px;
+}
+
+#toc .toc-h2 {
+    padding-left: 10px;
+}
+
+#toc .toc-h3 {
+    padding-left: 20px;
+}
+
+#toc>ul>li.active>a {
+    border-left: 2px solid #2d4670;
+    padding-left:18px;
+}
+
+#toc li.active>a {
+    color: #2d4670;
+    font-weight:bold;
 }

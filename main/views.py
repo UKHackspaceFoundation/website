@@ -7,6 +7,9 @@ import json
 from django.contrib.auth.decorators import login_required
 from .models import Space
 import sys
+import requests
+import markdown
+from urllib.parse import urlparse, urljoin
 
 def index(request):
     return render(request, 'main/index.html', {'spaces': Space.objects.all()})
@@ -92,7 +95,6 @@ class Login(View):
 def logout_view(request):
     logout(request)
     return redirect('/')
-<<<<<<< HEAD
 
 
 def resources(request, path):
@@ -106,9 +108,9 @@ def resources(request, path):
         path += 'README.md'
         return redirect('/resources/' + path)
 
-    rawurl = urlparse.urljoin('https://raw.githubusercontent.com/UKHackspaceFoundation/resources/master/', path);
+    rawurl = urljoin('https://raw.githubusercontent.com/UKHackspaceFoundation/resources/master/', path);
 
-    url = urlparse.urljoin('https://github.com/UKHackspaceFoundation/resources/blob/master/', path)
+    url = urljoin('https://github.com/UKHackspaceFoundation/resources/blob/master/', path)
 
     r = requests.get(rawurl)
 
@@ -133,5 +135,3 @@ def resources(request, path):
         'md': markdown.markdown(r.text, safe_mode='escape')
     }
     return render(request, 'main/resources.html', context)
-=======
->>>>>>> master
