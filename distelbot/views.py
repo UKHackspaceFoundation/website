@@ -22,6 +22,6 @@ def hook(request):
         bot.sendMessage(chat_id=-150366976, text=msg)
 
         return HttpResponse(status=200)
-    except Exception, e:
+    except Exception as e:
         msg = "Error: " + str(e)
         return HttpResponse(msg, status=500)
