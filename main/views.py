@@ -119,8 +119,10 @@ def foundation(request, path):
 def github_browser(request, settings, path):
     origpath = path
 
-    # need to make sure path ends in an .md file, assume README.md
-    if not path.endswith('.md'):
+    slugs = path.split('/')
+
+    # need to redirect folder requests to a README.md file
+    if '.' not in slugs[-1]:
         if path != '' and not path.endswith('/'):
             path += '/'
         path += 'README.md'
@@ -130,10 +132,17 @@ def github_browser(request, settings, path):
 
     url = urljoin('https://github.com/UKHackspaceFoundation/'+settings['repo']+'/blob/master/', path)
 
+
+    # if this isn't a markdown file?
+    if not path.endswith('.md'):
+        # redirect to raw url  (e.g. for .pdf, etc)
+        return redirect(rawurl)
+
+
+
     r = requests.get(rawurl)
 
     # build breadcrumbs
-    slugs = path.split('/')
     breadcrumbs = []
     slugurl = ''
     for slug in slugs:
