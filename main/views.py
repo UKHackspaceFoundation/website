@@ -7,30 +7,18 @@ import json
 from django.contrib.auth.decorators import login_required
 from .models import Space
 import sys
-import requests
-import markdown
-import urlparse
 
 def index(request):
-    json_data = open('main/static/data.json')
-    data = json.load(json_data)
-    context = {
-        'spaces':data
-    }
-    return render(request, 'main/index.html', context)
+    return render(request, 'main/index.html', {'spaces': Space.objects.all()})
 
 def spaces(request):
-    json_data = open('main/static/data.json')
-    data = json.load(json_data)
-    return JsonResponse({'spaces':data})
+    results = Space.objects.all().values('name','lat','lng','main_website_url','logo_image_url','status')
+    return JsonResponse({'spaces': list(results)})
 
 
 @login_required
 def space_detail(request):
-    context = {
-        'spaces': Space.objects.all()
-    }
-    return render(request, 'main/space_detail.html', context)
+    return render(request, 'main/space_detail.html', {'spaces': Space.objects.all()})
 
 def valueOrBlank(obj, attr, d):
     if attr in obj:
@@ -104,6 +92,7 @@ class Login(View):
 def logout_view(request):
     logout(request)
     return redirect('/')
+<<<<<<< HEAD
 
 
 def resources(request, path):
@@ -144,3 +133,5 @@ def resources(request, path):
         'md': markdown.markdown(r.text, safe_mode='escape')
     }
     return render(request, 'main/resources.html', context)
+=======
+>>>>>>> master

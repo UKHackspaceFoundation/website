@@ -80,10 +80,10 @@
 
                                 {% for space in region.list %}
                                     <tr>
-                                        <td>{% if space.logoImageUrl %}
-                                            <img src="{{ space.logoImageUrl }}">
+                                        <td>{% if space.logo_image_url %}
+                                            <img src="{{ space.logo_image_url }}">
                                         {% endif %}</td>
-                                        <td><a href="{{ space.mainWebsiteUrl }}">{{ space.name }}</a></td>
+                                        <td><a href="{{ space.main_website_url }}">{{ space.name }}</a></td>
                                         <td>{{ space.status }}</td>
                                     </tr>
                                 {% endfor %}
@@ -305,9 +305,9 @@
               google.maps.event.addListener(marker, 'click', (function(marker, i) {
                 return function() {
                   var html = '';
-                  if (data[i].logoImageUrl !== undefined)
-                      html +='<img src="'+data[i].logoImageUrl+'" style="width:4em;"><br/>';
-                  html += '<a href="'+data[i].mainWebsiteUrl+'">' + data[i].name + '</a><br/>';
+                  if (data[i].logoImageUrl != '')
+                      html +='<img src="'+data[i].logo_image_url+'" style="width:4em;"><br/>';
+                  html += '<a href="'+data[i].main_website_url+'">' + data[i].name + '</a><br/>';
                   html += '('+data[i].status + ')';
 
                   infowindow.setContent(html);
