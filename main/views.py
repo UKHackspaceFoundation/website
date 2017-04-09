@@ -98,7 +98,25 @@ def logout_view(request):
 
 
 def resources(request, path):
+    settings = {
+        'repo':'resources',
+        'title':'Resources',
+        'subtitle':'Curated resources to aid starting and running a Hackspace'
+    }
+    return github_browser(request, settings, path)
 
+
+def foundation(request, path):
+    settings = {
+        'repo':'foundation',
+        'title':'About the Foundation',
+        'subtitle':'Goals, structure and operation of the Hackspace Foundation'
+    }
+    return github_browser(request, settings, path)
+
+
+
+def github_browser(request, settings, path):
     origpath = path
 
     # need to make sure path ends in an .md file, assume README.md
@@ -106,11 +124,11 @@ def resources(request, path):
         if path != '' and not path.endswith('/'):
             path += '/'
         path += 'README.md'
-        return redirect('/resources/' + path)
+        return redirect('/'+settings['repo']+'/' + path)
 
-    rawurl = urljoin('https://raw.githubusercontent.com/UKHackspaceFoundation/resources/master/', path);
+    rawurl = urljoin('https://raw.githubusercontent.com/UKHackspaceFoundation/'+settings['repo']+'/master/', path);
 
-    url = urljoin('https://github.com/UKHackspaceFoundation/resources/blob/master/', path)
+    url = urljoin('https://github.com/UKHackspaceFoundation/'+settings['repo']+'/blob/master/', path)
 
     r = requests.get(rawurl)
 
@@ -126,12 +144,15 @@ def resources(request, path):
 
     # TODO: deal with not found
     context = {
+        'repo': settings['repo'],
         'origpath': origpath,
         'breadcrumbs':breadcrumbs,
         'path':path.split('/'),
         'rawurl':rawurl,
         'url':url,
         'imageBase': rawurl.rsplit('/', 1)[0] + '/',
-        'md': markdown.markdown(r.text, safe_mode='escape')
+        'md': markdown.markdown(r.text, safe_mode='escape'),
+        'title': settings['title'],
+        'subtitle': settings['subtitle']
     }
-    return render(request, 'main/resources.html', context)
+    return render(request, 'main/github_browser.html', context)

@@ -2,14 +2,14 @@
 {% load static %}
 
 
-{% block title %}Hackspace Foundation{% endblock %}
+{% block title %}Hackspace Foundation - {{ title }}{% endblock %}
 
 {% block jumbotron %}
 
 <div class="jumbotron">
     <div class="container">
-        <h1>Resources</h1>
-        <p>Curated resources to aid starting and running a Hackspace</p>
+        <h1>{{ title }}</h1>
+        <p>{{ subtitle }}</p>
     </div>
 </div>
 
@@ -21,7 +21,7 @@
 <a href="{{ url }}" class="btn btn-sm btn-default pull-right" style="margin-top: 3px; margin-right:5px;">View on Github</a>
 
 <ol class="breadcrumb" style="width:100%">
-    <li><a href="/resources/">Resources</a></li>
+    <li><a href="/{{ repo }}/">{{ title }}</a></li>
     {% for breadcrumb in breadcrumbs %}
         <li><a href="/resources{{ breadcrumb.url }}">{{ breadcrumb.slug }}</a></li>
     {% endfor %}
