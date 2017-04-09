@@ -118,7 +118,8 @@
 
     function initMap() {
         map = new google.maps.Map(document.getElementById('map'), {
-         zoom: 5,
+          zoom: 5,
+          scrollwheel:false,
           center: new google.maps.LatLng(54.350291,-5.0339395),
           mapTypeId: google.maps.MapTypeId.ROADMAP,
           mapTypeControl:false,
