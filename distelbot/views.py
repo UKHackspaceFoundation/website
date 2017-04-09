@@ -4,21 +4,24 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 import telegram
 import json, datetime
+import sys
 
 @csrf_exempt
 @require_POST
 def hook(request):
-    jsondata = request.body
-    body = json.loads(jsondata)
 
-    bot = telegram.Bot(token='360648398:AAG-vPZv-0GwPkqRkIs3sVogfM4M3wKxkFg')
+    try:
+        jsondata = request.body
+        body = json.loads(jsondata)
 
-    url = request.META['HTTP_X_DISCOURSE_INSTANCE'] + '/t/' + body['topic']['slug'] + '/' + str(body['topic']['id']) + '/' + str(body['topic']['posts_count'])
-    msg = "Forum: " + request.META['HTTP_X_DISCOURSE_EVENT'] + ' in ' + url
+        bot = telegram.Bot(token='360648398:AAG-vPZv-0GwPkqRkIs3sVogfM4M3wKxkFg')
 
+        url = request.META['HTTP_X_DISCOURSE_INSTANCE'] + '/t/' + body['topic']['slug'] + '/' + str(body['topic']['id']) + '/' + str(body['topic']['posts_count'])
+        msg = "Forum: " + request.META['HTTP_X_DISCOURSE_EVENT'] + ' in ' + url
 
+        bot.sendMessage(chat_id=-150366976, text=msg)
 
-    bot.sendMessage(chat_id=-150366976, text=msg)
-
-
-    return HttpResponse(status=200)
+        return HttpResponse(status=200)
+    except Exception, e:
+        msg = "Error: " + str(e)
+        return HttpResponse(msg, status=500)
