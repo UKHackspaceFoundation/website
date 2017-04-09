@@ -11,7 +11,7 @@ import sys
 def hook(request):
 
     try:
-        jsondata = request.body
+        jsondata = request.body.decode('utf-8')
         body = json.loads(jsondata)
 
         bot = telegram.Bot(token='360648398:AAG-vPZv-0GwPkqRkIs3sVogfM4M3wKxkFg')
