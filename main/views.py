@@ -7,6 +7,9 @@ import json
 from django.contrib.auth.decorators import login_required
 from .models import Space
 import sys
+import requests
+import markdown
+from urllib.parse import urlparse, urljoin
 
 def index(request):
     return render(request, 'main/index.html', {'spaces': Space.objects.all()})
@@ -92,3 +95,43 @@ class Login(View):
 def logout_view(request):
     logout(request)
     return redirect('/')
+
+
+def resources(request, path):
+
+    origpath = path
+
+    # need to make sure path ends in an .md file, assume README.md
+    if not path.endswith('.md'):
+        if path != '' and not path.endswith('/'):
+            path += '/'
+        path += 'README.md'
+        return redirect('/resources/' + path)
+
+    rawurl = urljoin('https://raw.githubusercontent.com/UKHackspaceFoundation/resources/master/', path);
+
+    url = urljoin('https://github.com/UKHackspaceFoundation/resources/blob/master/', path)
+
+    r = requests.get(rawurl)
+
+    # build breadcrumbs
+    slugs = path.split('/')
+    breadcrumbs = []
+    slugurl = ''
+    for slug in slugs:
+        if slug != '':
+            slugurl = '%s/%s' % (slugurl, slug)
+            breadcrumb = {'slug':slug, 'url':slugurl}
+            breadcrumbs.append(breadcrumb)
+
+    # TODO: deal with not found
+    context = {
+        'origpath': origpath,
+        'breadcrumbs':breadcrumbs,
+        'path':path.split('/'),
+        'rawurl':rawurl,
+        'url':url,
+        'imageBase': rawurl.rsplit('/', 1)[0] + '/',
+        'md': markdown.markdown(r.text, safe_mode='escape')
+    }
+    return render(request, 'main/resources.html', context)
