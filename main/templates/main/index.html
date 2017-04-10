@@ -114,6 +114,7 @@
     var data = [];
     var map, infowindow;
     var mapReady = false;
+    var bigMarkerLayer, smallMarkerLayer;
 
     function statusCode(a) {
         return (a.status == 'Suspended' || a.status == 'Defunct') ? 1 : 0;
@@ -139,9 +140,9 @@
             return;
         }
 
-        var marker, i;
+        var i;
 
-        var myIcon = L.icon({
+        var bigIcon = L.icon({
             iconUrl: '{% static "images/marker-icon.png" %}',
             shadowUrl: '{% static "images/marker-shadow.png" %}',
             iconSize: [25, 41],
@@ -151,15 +152,22 @@
             shadowAnchor: [14,41]
         });
 
+        var smallIcon = L.icon({
+            iconUrl: '{% static "images/marker-icon-small.png" %}',
+            shadowUrl: '{% static "images/marker-shadow-small.png" %}',
+            iconSize: [12, 20],
+            iconAnchor: [6, 20],
+            popupAnchor: [0, -20],
+            shadowSize: [20,20],
+            shadowAnchor: [7,20]
+        });
+
+
+        var bigMarkers = [],  // use when zoomed in
+            smallMarkers = [];  // use when zoomed out
+
         for (i = 0; i < data.length; i++) {
           if (statusCode(data[i]) == 0) {
-
-
-
-              marker = L.marker([data[i].lat, data[i].lng], {
-                  icon: myIcon,
-                  title: data[i].name
-              }).addTo(map);
 
               var html = '';
               if (data[i].logoImageUrl != '')
@@ -167,9 +175,40 @@
               html += '<a href="'+data[i].main_website_url+'">' + data[i].name + '</a><br/>';
               html += '('+data[i].status + ')';
 
-              marker.bindPopup(html);
+              // big marker
+              var bm = L.marker([data[i].lat, data[i].lng], {
+                  icon: bigIcon,
+                  title: data[i].name
+              });
+              bm.bindPopup(html);
+              bigMarkers.push(bm);
+
+              // small marker
+              var sm = L.marker([data[i].lat, data[i].lng], {
+                  icon: smallIcon,
+                  title: data[i].name
+              });
+              sm.bindPopup(html);
+              smallMarkers.push(sm);
           }
         }
+
+        bigMarkerLayer = L.layerGroup(bigMarkers);
+        smallMarkerLayer = L.layerGroup(smallMarkers).addTo(map);
+
+
+        // zoom control
+        map.on('zoomend', function(e) {
+            var currentZoom = map.getZoom();
+
+            if (currentZoom < 7) {
+                map.addLayer(smallMarkerLayer);
+                map.removeLayer(bigMarkerLayer);
+            } else {
+                map.removeLayer(smallMarkerLayer);
+                map.addLayer(bigMarkerLayer);
+            }
+        });
     }
 
     // fetch data
