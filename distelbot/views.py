@@ -16,11 +16,21 @@ def hook(request):
 
         bot = telegram.Bot(token='360648398:AAG-vPZv-0GwPkqRkIs3sVogfM4M3wKxkFg')
 
-        url = request.META['HTTP_X_DISCOURSE_INSTANCE'] + '/t/' + body['topic']['slug'] + '/' + str(body['topic']['id']) + '/' + str(body['topic']['posts_count'])
-        msg = "Forum: [" + request.META['HTTP_X_DISCOURSE_EVENT']
-        msg += ' by ' + body['post']['name']
-        msg += ' in ' + body['topic']['title']
-        msg += ']('+ url +')'
+        msg = ""
+
+        if request.META['HTTP_X_DISCOURSE_EVENT_TYPE'] == 'topic' and body['topic']['archetype'] == 'regular':
+            url = request.META['HTTP_X_DISCOURSE_INSTANCE'] + '/t/' + body['topic']['slug']
+            msg = "Forum: [" + request.META['HTTP_X_DISCOURSE_EVENT']
+            msg += ' by ' + body['user']['name']
+            msg += ' in ' + body['topic']['title']
+            msg += ']('+ url +')'
+
+        else:
+            url = request.META['HTTP_X_DISCOURSE_INSTANCE'] + '/t/' + body['topic']['slug'] + '/' + str(body['topic']['id']) + '/' + str(body['topic']['posts_count'])
+            msg = "Forum: [" + request.META['HTTP_X_DISCOURSE_EVENT']
+            msg += ' by ' + body['post']['name']
+            msg += ' in ' + body['topic']['title']
+            msg += ']('+ url +')'
 
         bot.sendMessage(chat_id=-150366976, text=msg, parse_mode=telegram.ParseMode.MARKDOWN)
 
