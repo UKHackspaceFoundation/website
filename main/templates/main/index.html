@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Hackspace Foundation{% endblock %}
 
@@ -105,218 +106,68 @@
 
 {% block js %}
     {{ block.super }}
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAMzvcKXd0kz91NK0jxhcmT4DJmYri7b1k&callback=initMap" async defer></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
 
 
     <script>
     var data = [];
     var map, infowindow;
+    var mapReady = false;
 
     function statusCode(a) {
         return (a.status == 'Suspended' || a.status == 'Defunct') ? 1 : 0;
     }
 
     function initMap() {
-        map = new google.maps.Map(document.getElementById('map'), {
-          zoom: 5,
-          scrollwheel:false,
-          center: new google.maps.LatLng(54.350291,-5.0339395),
-          mapTypeId: google.maps.MapTypeId.ROADMAP,
-          mapTypeControl:false,
-          streetViewControl:false,
-          styles: [
-            {
-              "elementType": "geometry",
-              "stylers": [
-                {
-                  "color": "#f5f5f5"
-                }
-              ]
-            },
-            {
-              "elementType": "labels.icon",
-              "stylers": [
-                {
-                  "visibility": "off"
-                }
-              ]
-            },
-            {
-              "elementType": "labels.text.fill",
-              "stylers": [
-                {
-                  "color": "#616161"
-                }
-              ]
-            },
-            {
-              "elementType": "labels.text.stroke",
-              "stylers": [
-                {
-                  "color": "#f5f5f5"
-                }
-              ]
-            },
-            {
-              "featureType": "administrative.land_parcel",
-              "elementType": "labels.text.fill",
-              "stylers": [
-                {
-                  "color": "#bdbdbd"
-                }
-              ]
-            },
-            {
-              "featureType": "poi",
-              "elementType": "geometry",
-              "stylers": [
-                {
-                  "color": "#eeeeee"
-                }
-              ]
-            },
-            {
-              "featureType": "poi",
-              "elementType": "labels.text.fill",
-              "stylers": [
-                {
-                  "color": "#757575"
-                }
-              ]
-            },
-            {
-              "featureType": "poi.park",
-              "elementType": "geometry",
-              "stylers": [
-                {
-                  "color": "#e5e5e5"
-                }
-              ]
-            },
-            {
-              "featureType": "poi.park",
-              "elementType": "labels.text.fill",
-              "stylers": [
-                {
-                  "color": "#9e9e9e"
-                }
-              ]
-            },
-            {
-              "featureType": "road",
-              "elementType": "geometry",
-              "stylers": [
-                {
-                  "color": "#ffffff"
-                }
-              ]
-            },
-            {
-              "featureType": "road.arterial",
-              "elementType": "labels.text.fill",
-              "stylers": [
-                {
-                  "color": "#757575"
-                }
-              ]
-            },
-            {
-              "featureType": "road.highway",
-              "elementType": "geometry",
-              "stylers": [
-                {
-                  "color": "#dadada"
-                }
-              ]
-            },
-            {
-              "featureType": "road.highway",
-              "elementType": "labels.text.fill",
-              "stylers": [
-                {
-                  "color": "#616161"
-                }
-              ]
-            },
-            {
-              "featureType": "road.local",
-              "elementType": "labels.text.fill",
-              "stylers": [
-                {
-                  "color": "#9e9e9e"
-                }
-              ]
-            },
-            {
-              "featureType": "transit.line",
-              "elementType": "geometry",
-              "stylers": [
-                {
-                  "color": "#e5e5e5"
-                }
-              ]
-            },
-            {
-              "featureType": "transit.station",
-              "elementType": "geometry",
-              "stylers": [
-                {
-                  "color": "#eeeeee"
-                }
-              ]
-            },
-            {
-              "featureType": "water",
-              "elementType": "geometry",
-              "stylers": [
-                {
-                  "color": "#96aac9"
-                }
-              ]
-            },
-            {
-              "featureType": "water",
-              "elementType": "labels.text.fill",
-              "stylers": [
-                {
-                  "color": "#505050"
-                }
-              ]
-            }
-          ]
-        });
 
-        infowindow = new google.maps.InfoWindow();
+        map = L.map('map').setView([54.3, -5], 5);
+
+        L.tileLayer(
+            'https://api.mapbox.com/styles/v1/axford/cj1c0rdnm00cc2smk5tz8e9yg/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoiYXhmb3JkIiwiYSI6ImNqMWMwYXI5MDAwNG8zMm5uanFyeThmZDEifQ.paAXk3S29-VVw1bhk458Iw', {
+                tileSize: 256,
+                zoomOffset: 0,
+                attribution: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+
+        mapReady = true;
     }
 
     function initMarkers() {
-        if (map === undefined) {
+        if (!mapReady) {
             setTimeout(initMarkers, 100);
             return;
         }
 
         var marker, i;
 
+        var myIcon = L.icon({
+            iconUrl: '{% static "images/marker-icon.png" %}',
+            shadowUrl: '{% static "images/marker-shadow.png" %}',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [0, -41],
+            shadowSize: [41,41],
+            shadowAnchor: [14,41]
+        });
+
         for (i = 0; i < data.length; i++) {
           if (statusCode(data[i]) == 0) {
-              marker = new google.maps.Marker({
-                position: new google.maps.LatLng(data[i].lat, data[i].lng),
-                map: map
-              });
-              marker.setIcon('http://maps.google.com/mapfiles/ms/icons/green-dot.png');
 
-              google.maps.event.addListener(marker, 'click', (function(marker, i) {
-                return function() {
-                  var html = '';
-                  if (data[i].logoImageUrl != '')
-                      html +='<img src="'+data[i].logo_image_url+'" style="width:4em;"><br/>';
-                  html += '<a href="'+data[i].main_website_url+'">' + data[i].name + '</a><br/>';
-                  html += '('+data[i].status + ')';
 
-                  infowindow.setContent(html);
-                  infowindow.open(map, marker);
-                }
-              })(marker, i));
+
+              marker = L.marker([data[i].lat, data[i].lng], {
+                  icon: myIcon,
+                  title: data[i].name
+              }).addTo(map);
+
+              var html = '';
+              if (data[i].logoImageUrl != '')
+                  html +='<img src="'+data[i].logo_image_url+'" style="width:4em;"><br/>';
+              html += '<a href="'+data[i].main_website_url+'">' + data[i].name + '</a><br/>';
+              html += '('+data[i].status + ')';
+
+              marker.bindPopup(html);
           }
         }
     }
@@ -326,5 +177,9 @@
         data = json.spaces;
         initMarkers();
     });
+
+    // init map
+    initMap();
+
     </script>
 {% endblock %}
