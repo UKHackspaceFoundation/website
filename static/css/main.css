@@ -27,6 +27,13 @@ h2 {
     }
 }
 
+.footer {
+    margin-top:30px;
+    background-color: #f8f8f8;
+    color: #808080;
+    padding: 8px 0px 30px 0px;
+}
+
 .jumbotron {
     background-color: #2d4670;
     padding-top: 25px;
