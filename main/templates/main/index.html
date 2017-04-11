@@ -49,11 +49,11 @@
 
 
 
-<h2>List of Spaces</h2>
+<h2>List of Active Spaces</h2>
 
 <div class="row">
     <div class="col-md-6">
-        <p>We currently know of <b>{{ spaces|length }}</b> hackspace-like entities.
+        <p>We currently know of <b>{{ activeSpaces|length }}</b> active hackspace-like entities.
             These are all the ones we've found / been
            told about. This is an informal process so it may well be out of date - if you spot any ommissions/corrections,
            please let us know via <a href="mailto:contact@hackspace.org.uk">email</a> or the <a href="https://forum.hackspace.org.uk">forum</a>.
@@ -64,9 +64,10 @@
     </div>
 
     <div class="col-md-6">
-        {% if spaces %}
-            <div id="ListOfSpaces">
-            {% regroup spaces|dictsort:"name"|dictsort:"country" by country as spaces_by_country %}
+
+        <div id="ListOfSpaces">
+            <h3>Active Spaces</h3>
+            {% regroup activeSpaces|dictsort:"name"|dictsort:"country" by country as spaces_by_country %}
 
             {% for country in spaces_by_country %}
                 <h3>{{ country.grouper }}</h3>
@@ -93,11 +94,51 @@
                             </table>
                 {% endfor %}
             {% endfor %}
-        {% endif %}
-
+        </div>
     </div>
 </div>
 
+
+<h2>List of Inactive Spaces</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <p>We currently know of <b>{{ inactiveSpaces|length }}</b> hackspace-like entities that have sadly closed or suspended operation.
+        </p>
+    </div>
+
+    <div class="col-md-6">
+        <div id="ListOfSpaces">
+            {% regroup inactiveSpaces|dictsort:"name"|dictsort:"country" by country as spaces_by_country %}
+
+            {% for country in spaces_by_country %}
+                <h3>{{ country.grouper }}</h3>
+
+                {% regroup country.list|dictsort:"region" by region as spaces_by_region %}
+                {% for region in spaces_by_region %}
+                    {% if region.grouper != country.grouper %}
+                        <h4>{{ region.grouper }}</h4>
+                    {% endif %}
+
+
+                            <table class="table table-condensed">
+                                <tr> <th class="col-md-1 col-xs-1">Logo</th> <th>Name</th> <th class="col-md-3 col-sm-3 col-xs-3">Status</th> </tr>
+
+                                {% for space in region.list %}
+                                    <tr>
+                                        <td>{% if space.logo_image_url %}
+                                            <img src="{{ space.logo_image_url }}">
+                                        {% endif %}</td>
+                                        <td><a href="{{ space.main_website_url }}">{{ space.name }}</a></td>
+                                        <td>{{ space.status }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
 
 
 
