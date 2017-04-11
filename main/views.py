@@ -12,6 +12,7 @@ import requests
 import markdown
 from urllib.parse import urlparse, urljoin
 from main.models import User
+from dealer.git import git
 
 def index(request):
     activeSpaces = Space.objects.filter(status = "Active") | Space.objects.filter(status = "Starting")
@@ -22,6 +23,13 @@ def index(request):
 def spaces(request):
     results = Space.objects.all().values('name','lat','lng','main_website_url','logo_image_url','status')
     return JsonResponse({'spaces': list(results)})
+
+@login_required
+def gitinfo(request):
+    context = {
+        'tag': git.tag
+    }
+    return render(request, 'main/gitinfo.html', context)
 
 # return space info as geojson
 def geojson(request):

@@ -16,4 +16,5 @@ urlpatterns = [
     url(r'^resources/(?P<path>.*)$', views.resources, name='resources'),
     url(r'^foundation/(?P<path>.*)$', views.foundation, name='foundation'),
     url(r'^signup$', views.SignupView.as_view(), name='signup'),
+    url(r'^gitinfo$', views.gitinfo, name='gitinfo'),
 ]

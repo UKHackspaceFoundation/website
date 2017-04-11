@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Git Info | {{ block.super }}{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Git Info</h1>
+
+        <dl>
+            <dd>Tag</dd>  <dt>{{ tag }}</dt>
+        </dl>
+    </div>
+{% endblock %}
