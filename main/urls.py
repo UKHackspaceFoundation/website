@@ -15,4 +15,5 @@ urlpatterns = [
     url(r'^logout$', views.logout_view, name='logout'),
     url(r'^resources/(?P<path>.*)$', views.resources, name='resources'),
     url(r'^foundation/(?P<path>.*)$', views.foundation, name='foundation'),
+    url(r'^signup$', views.SignupView.as_view(), name='signup'),
 ]

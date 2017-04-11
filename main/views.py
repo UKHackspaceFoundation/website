@@ -5,11 +5,13 @@ from django.views import View
 from django.http import JsonResponse
 import json
 from django.contrib.auth.decorators import login_required
+from django.views.generic.edit import CreateView
 from .models import Space
 import sys
 import requests
 import markdown
 from urllib.parse import urlparse, urljoin
+from main.models import User
 
 def index(request):
     return render(request, 'main/index.html', {'spaces': Space.objects.all()})
@@ -120,6 +122,13 @@ class Login(View):
 def logout_view(request):
     logout(request)
     return redirect('/')
+
+class SignupView(CreateView):
+    #form_class = UserCreationForm
+    model = User
+    fields = ['username', 'email', 'password']
+    template_name = 'main/signup.html'
+    success_url = "/login"
 
 
 def resources(request, path):

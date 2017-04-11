@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Register | {{ block.super }}{% endblock %}
+
+<h1>Register as a User</h1>
+
+{% block content %}
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Sign Up">
+    </form>
+{% endblock %}
