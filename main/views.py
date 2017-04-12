@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.forms import UserCreationForm
 from django.views import View
 from django.http import JsonResponse
 import json
@@ -142,10 +143,14 @@ def logout_view(request):
     return redirect('/')
 
 
+class CustomUserCreationForm(UserCreationForm):
+    class Meta(UserCreationForm.Meta):
+        model = User
+
+
 class SignupView(CreateView):
-    # form_class = UserCreationForm
+    form_class = CustomUserCreationForm
     model = User
-    fields = ['username', 'email', 'password']
     template_name = 'main/signup.html'
     success_url = "/login"
 
