@@ -5,10 +5,22 @@ body {
   line-height:1.5;
 }
 
+p {
+    margin: 0px 0px 22px;
+}
+
+h1 {
+    margin-bottom: 22px;
+}
+
 h2 {
     padding-bottom:5px;
-    margin-bottom:15px;
+    margin-bottom:17px;
     border-bottom: 1px solid #eee;
+}
+
+.alert {
+    padding: 21px 15px;
 }
 
 .navbar-default .navbar-brand {
