@@ -2,12 +2,12 @@
 
 {% block title %}Register | {{ block.super }}{% endblock %}
 
+{% block content %}
 <h1>Register as a User</h1>
 
-{% block content %}
-    <form method="POST">
+    <form method="POST" class="form-horizontal">
         {% csrf_token %}
         {{ form.as_p }}
-        <input type="submit" value="Sign Up">
+        <button class="btn btm-default">Sign Up</button>
     </form>
 {% endblock %}
