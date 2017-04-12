@@ -13,11 +13,16 @@ import markdown
 from urllib.parse import urlparse, urljoin
 from main.models import User
 from dealer.git import git
+from django.conf import settings
 
 def index(request):
     activeSpaces = Space.objects.filter(status = "Active") | Space.objects.filter(status = "Starting")
     inactiveSpaces = Space.objects.filter(status = "Defunct") | Space.objects.filter(status = "Suspended")
-    return render(request, 'main/index.html', {'activeSpaces': activeSpaces, 'inactiveSpaces':inactiveSpaces})
+    return render(request, 'main/index.html', {
+        'activeSpaces': activeSpaces,
+        'inactiveSpaces':inactiveSpaces,
+        'MAPBOX_ACCESS_TOKEN': getattr(settings, "MAPBOX_ACCESS_TOKEN", None)
+    })
 
 # return space info as json - used for rendering map on homepage
 def spaces(request):

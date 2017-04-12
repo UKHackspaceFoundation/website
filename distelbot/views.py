@@ -5,6 +5,7 @@ from django.views.decorators.http import require_POST
 import telegram
 import json, datetime
 import sys
+from django.conf import settings
 
 @csrf_exempt
 @require_POST
@@ -14,7 +15,7 @@ def hook(request):
         jsondata = request.body.decode('utf-8')
         body = json.loads(jsondata)
 
-        bot = telegram.Bot(token='360648398:AAG-vPZv-0GwPkqRkIs3sVogfM4M3wKxkFg')
+        bot = telegram.Bot(token= getattr(settings, "TELEGRAM_BOT_TOKEN", None) )
 
         msg = ""
 
@@ -32,7 +33,7 @@ def hook(request):
             msg += ' in ' + body['topic']['title']
             msg += ']('+ url +')'
 
-        bot.sendMessage(chat_id=-150366976, text=msg, parse_mode=telegram.ParseMode.MARKDOWN)
+        bot.sendMessage(chat_id=getattr(settings, "TELEGRAM_BOT_CHAT_ID", None), text=msg, parse_mode=telegram.ParseMode.MARKDOWN)
 
         return HttpResponse(status=200)
     except Exception as e:

@@ -27,6 +27,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# Other secret stuff (development values in git repo)
+MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoiYXhmb3JkIiwiYSI6ImNqMWMwYXI5MDAwNG8zMm5uanFyeThmZDEifQ.paAXk3S29-VVw1bhk458Iw'
+TELEGRAM_BOT_TOKEN = '360648398:AAG-vPZv-0GwPkqRkIs3sVogfM4M3wKxkFg'
+TELEGRAM_BOT_CHAT_ID = -150366976
 
 # Application definition
 
