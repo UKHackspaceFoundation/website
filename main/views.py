@@ -7,27 +7,29 @@ import json
 from django.contrib.auth.decorators import login_required
 from django.views.generic.edit import CreateView
 from .models import Space
-import sys
 import requests
 import markdown
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urljoin
 from main.models import User
 from dealer.git import git
 from django.conf import settings
 
+
 def index(request):
-    activeSpaces = Space.objects.filter(status = "Active") | Space.objects.filter(status = "Starting")
-    inactiveSpaces = Space.objects.filter(status = "Defunct") | Space.objects.filter(status = "Suspended")
+    activeSpaces = Space.objects.filter(status="Active") | Space.objects.filter(status="Starting")
+    inactiveSpaces = Space.objects.filter(status="Defunct") | Space.objects.filter(status="Suspended")
     return render(request, 'main/index.html', {
         'activeSpaces': activeSpaces,
-        'inactiveSpaces':inactiveSpaces,
+        'inactiveSpaces': inactiveSpaces,
         'MAPBOX_ACCESS_TOKEN': getattr(settings, "MAPBOX_ACCESS_TOKEN", None)
     })
 
+
 # return space info as json - used for rendering map on homepage
 def spaces(request):
-    results = Space.objects.all().values('name','lat','lng','main_website_url','logo_image_url','status')
+    results = Space.objects.all().values('name', 'lat', 'lng', 'main_website_url', 'logo_image_url', 'status')
     return JsonResponse({'spaces': list(results)})
+
 
 @login_required
 def gitinfo(request):
@@ -36,9 +38,10 @@ def gitinfo(request):
     }
     return render(request, 'main/gitinfo.html', context)
 
+
 # return space info as geojson
 def geojson(request):
-    results = Space.objects.all().values('name','lat','lng','main_website_url','logo_image_url','status')
+    results = Space.objects.all().values('name', 'lat', 'lng', 'main_website_url', 'logo_image_url', 'status')
     geo = {
         "type": "FeatureCollection",
         "features": []
@@ -46,10 +49,10 @@ def geojson(request):
     for space in results:
         if (space['lng'] != 0 and space['lat'] != 0):
             geo['features'].append({
-                "type":"Feature",
-                "geometry":{
-                    "type":"Point",
-                    "coordinates":[ float(space['lng']), float(space['lat']) ]
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [float(space['lng']), float(space['lat'])]
                 },
                 "properties": {
                     "name": space['name'],
@@ -57,7 +60,7 @@ def geojson(request):
                     "status": space['status'],
                     "logo": space['logo_image_url']
                 }
-            });
+            })
     return JsonResponse(geo)
 
 
@@ -65,11 +68,13 @@ def geojson(request):
 def space_detail(request):
     return render(request, 'main/space_detail.html', {'spaces': Space.objects.all()})
 
+
 def valueOrBlank(obj, attr, d):
     if attr in obj:
         return obj[attr]
     else:
         return d
+
 
 @login_required
 def import_spaces(request):
@@ -82,28 +87,25 @@ def import_spaces(request):
         q = Space.objects.filter(name=s['name'])
         if len(q) == 0:
             srecord = Space(
-                name = valueOrBlank(s,'name',''),
-                longname = valueOrBlank(s,'longname',''),
-                town = valueOrBlank(s,'town',''),
-                country = valueOrBlank(s,'country',''),
-                region = valueOrBlank(s,'region',''),
-                have_premises = valueOrBlank(s,'havePremises','No')== 'Yes',
-                town_not_in_name = valueOrBlank(s,'townNotInName','No')== 'Yes',
-                address_first_line = valueOrBlank(s,'addressFirstLine',''),
-                postcode = valueOrBlank(s,'postcode',''),
-                lat = valueOrBlank(s,'lat',0.0),
-                lng = valueOrBlank(s,'lng',0.0),
-                main_website_url = valueOrBlank(s,'mainWebsiteUrl',''),
-                logo_image_url = valueOrBlank(s,'logoImageUrl',''),
-                status = valueOrBlank(s,'status',''),
-                classification = valueOrBlank(s,'classification','')
+                name=valueOrBlank(s, 'name', ''),
+                longname=valueOrBlank(s, 'longname', ''),
+                town=valueOrBlank(s, 'town', ''),
+                country=valueOrBlank(s, 'country', ''),
+                region=valueOrBlank(s, 'region', ''),
+                have_premises=valueOrBlank(s, 'havePremises', 'No') == 'Yes',
+                town_not_in_name=valueOrBlank(s, 'townNotInName', 'No') == 'Yes',
+                address_first_line=valueOrBlank(s, 'addressFirstLine', ''),
+                postcode=valueOrBlank(s, 'postcode', ''),
+                lat=valueOrBlank(s, 'lat', 0.0),
+                lng=valueOrBlank(s, 'lng', 0.0),
+                main_website_url=valueOrBlank(s, 'mainWebsiteUrl', ''),
+                logo_image_url=valueOrBlank(s, 'logoImageUrl', ''),
+                status=valueOrBlank(s, 'status', ''),
+                classification=valueOrBlank(s, 'classification', '')
             )
             srecord.save()
-
-        #else
+        # else
             # existing record, do nothing for now
-
-
     return redirect('/space_detail')
 
 
@@ -117,6 +119,7 @@ def join(request):
 
 def join_supporter(request):
     return render(request, 'main/supporter.html')
+
 
 class Login(View):
     def get(self, request):
@@ -138,8 +141,9 @@ def logout_view(request):
     logout(request)
     return redirect('/')
 
+
 class SignupView(CreateView):
-    #form_class = UserCreationForm
+    # form_class = UserCreationForm
     model = User
     fields = ['username', 'email', 'password']
     template_name = 'main/signup.html'
@@ -148,46 +152,42 @@ class SignupView(CreateView):
 
 def resources(request, path):
     settings = {
-        'repo':'resources',
-        'title':'Resources',
-        'subtitle':'Curated resources to aid starting and running a Hackspace'
+        'repo': 'resources',
+        'title': 'Resources',
+        'subtitle': 'Curated resources to aid starting and running a Hackspace'
     }
     return github_browser(request, settings, path)
 
 
 def foundation(request, path):
     settings = {
-        'repo':'foundation',
-        'title':'About the Foundation',
-        'subtitle':'Goals, structure and operation of the Hackspace Foundation'
+        'repo': 'foundation',
+        'title': 'About the Foundation',
+        'subtitle': 'Goals, structure and operation of the Hackspace Foundation'
     }
     return github_browser(request, settings, path)
-
 
 
 def github_browser(request, settings, path):
     origpath = path
 
     slugs = path.split('/')
+    repo = settings['repo']
 
     # need to redirect folder requests to a README.md file
     if '.' not in slugs[-1]:
         if path != '' and not path.endswith('/'):
             path += '/'
         path += 'README.md'
-        return redirect('/'+settings['repo']+'/' + path)
+        return redirect('/%s/%s' % (repo, path))
 
-    rawurl = urljoin('https://raw.githubusercontent.com/UKHackspaceFoundation/'+settings['repo']+'/master/', path);
-
-    url = urljoin('https://github.com/UKHackspaceFoundation/'+settings['repo']+'/blob/master/', path)
-
+    rawurl = urljoin('https://raw.githubusercontent.com/UKHackspaceFoundation/%s/master/' % repo, path)
+    url = urljoin('https://github.com/UKHackspaceFoundation/%s/blob/master/' % repo, path)
 
     # if this isn't a markdown file?
     if not path.endswith('.md'):
         # redirect to raw url  (e.g. for .pdf, etc)
         return redirect(rawurl)
-
-
 
     r = requests.get(rawurl)
 
@@ -197,17 +197,17 @@ def github_browser(request, settings, path):
     for slug in slugs:
         if slug != '':
             slugurl = '%s/%s' % (slugurl, slug)
-            breadcrumb = {'slug':slug, 'url':slugurl}
+            breadcrumb = {'slug': slug, 'url': slugurl}
             breadcrumbs.append(breadcrumb)
 
     # TODO: deal with not found
     context = {
         'repo': settings['repo'],
         'origpath': origpath,
-        'breadcrumbs':breadcrumbs,
-        'path':path.split('/'),
-        'rawurl':rawurl,
-        'url':url,
+        'breadcrumbs': breadcrumbs,
+        'path': path.split('/'),
+        'rawurl': rawurl,
+        'url': url,
         'imageBase': rawurl.rsplit('/', 1)[0] + '/',
         'md': markdown.markdown(r.text, safe_mode='escape'),
         'title': settings['title'],
