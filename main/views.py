@@ -146,6 +146,7 @@ def logout_view(request):
 class CustomUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = User
+        fields = ('email',)
 
 
 class SignupView(CreateView):
