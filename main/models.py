@@ -6,12 +6,14 @@ from django.utils.translation import gettext_lazy as _
 class User(AbstractUser):
     username = None
     email = models.EmailField(_('email address'), unique=True)
+    space = models.ForeignKey('Space', models.SET_NULL, blank=True, null=True)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
 
 
 class Space(models.Model):
+
     name = models.CharField(max_length=100)
     longname = models.CharField(max_length=200)
     town = models.CharField(max_length=100, blank=True)
@@ -28,6 +30,9 @@ class Space(models.Model):
     status = models.CharField(max_length=20)
     classification = models.CharField(max_length=20)
     changed_date = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["name"]
 
     def publish(self):
         self.changed_date = timezone.now()
