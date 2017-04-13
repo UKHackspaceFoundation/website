@@ -153,7 +153,15 @@ class SignupView(CreateView):
     form_class = CustomUserCreationForm
     model = User
     template_name = 'main/signup.html'
-    success_url = "/login"
+    success_url = "/"
+
+    def form_valid(self, form):
+        res = super().form_valid(form)
+        user = authenticate(username=form.cleaned_data['email'], password=form.cleaned_data['password1'])
+        if user is not None:
+            if user.is_active:
+                login(self.request, user)
+        return res
 
 
 def resources(request, path):
