@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load widget_tweaks %}
 
 {% block title %}Register | {{ block.super }}{% endblock %}
 
@@ -8,20 +9,20 @@
         {% csrf_token %}
         <div class="form-group">
             <label for="inputEmail3" class="col-sm-2 control-label">Email</label>
-            <div class="col-sm-10">
-                {{ form.email }}
+            <div class="col-sm-10 col-md-6">
+                {% render_field form.email class+="form-control" %}
             </div>
         </div>
         <div class="form-group">
             <label for="inputPassword3" class="col-sm-2 control-label">Password</label>
-            <div class="col-sm-10">
-                {{ form.password1 }}
+            <div class="col-sm-10 col-md-6">
+                {% render_field form.password1 class+="form-control" %}
             </div>
         </div>
         <div class="form-group">
             <label for="inputPassword3" class="col-sm-2 control-label">Confirm Password</label>
-            <div class="col-sm-10">
-                {{ form.password2 }}
+            <div class="col-sm-10 col-md-6">
+                {% render_field form.password2 class+="form-control" %}
             </div>
         </div>
         <div class="form-group">
