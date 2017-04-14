@@ -207,3 +207,8 @@ h2 {
     color: #2d4670;
     font-weight:bold;
 }
+
+img.home-hackspace-logo {
+    max-width:50px;
+    max-height:50px;
+}

@@ -26,6 +26,16 @@ def index(request):
     })
 
 
+# homepage for registered users
+@login_required
+def home(request):
+    associated_users = User.objects.filter(space=request.user.space)
+    return render(request, 'main/home.html', {
+        'MAPBOX_ACCESS_TOKEN': getattr(settings, "MAPBOX_ACCESS_TOKEN", None),
+        'associated_users': associated_users
+    })
+
+
 # return space info as json - used for rendering map on homepage
 def spaces(request):
     results = Space.objects.all().values('name', 'lat', 'lng', 'main_website_url', 'logo_image_url', 'status')
@@ -132,7 +142,7 @@ class Login(View):
         user = authenticate(username=username, password=password)
         if user is not None:
             login(request, user)
-            return redirect('/')
+            return redirect('/home')
         else:
             messages.error(request, "Invalid username or password")
             return render(request, 'main/login.html')
@@ -153,7 +163,7 @@ class SignupView(CreateView):
     form_class = CustomUserCreationForm
     model = User
     template_name = 'main/signup.html'
-    success_url = "/"
+    success_url = "/home"
 
     def form_valid(self, form):
         res = super().form_valid(form)

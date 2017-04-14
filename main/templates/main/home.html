@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Home | Hackspace Foundation{% endblock %}
+
+{% block content %}
+
+<h1>Hola, {{ user.first_name }}</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Your Profile</h3>
+            </div>
+            <div class="panel-body">
+
+                <p>Profile stuff here... </p>
+
+
+                <hr/>
+
+                <h3>Membership Options</h3>
+
+                <a href="" class="btn btn-primary">Apply for Individual Membership</a>
+
+                <br><br>
+
+                <a href="" class="btn btn-success">Apply for {{ user.space.name }} to be a Member Space</a>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        {% if user.space %}
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Your Hackspace</h3>
+                </div>
+                <div class="panel-body">
+
+                    <img src="{{ user.space.logo_image_url }}" class="home-hackspace-logo pull-right"/>
+
+                    <h2>{{ user.space.name }}</h2>
+
+                    <dl class="dl-horizontal">
+                        <dt>Classification</dt> <dd>{{ user.space.classification }}</dd>
+                        <dt>Status</dt> <dd>{{ user.space.status }}</dd>
+                        <dt>Longname</dt> <dd>{{ user.space.longname }}</dd>
+                        <dt>Town</dt> <dd>{{ user.space.town }}</dd>
+                        <dt>Country</dt> <dd>{{ user.space.country }}</dd>
+                        <dt>Region</dt> <dd>{{ user.space.region }}</dd>
+                        <dt>Address</dt> <dd>{{ user.space.address_first_line }}</dd>
+                        <dt>Postcode</dt> <dd>{{ user.space.postcode }}</dd>
+                        <dt>Lat/Lng</dt> <dd>{{ user.space.lat }}, {{user.space.lng}}</dd>
+                        <dt>Website</dt> <dd>{{ user.space.main_website_url }}</dd>
+                        <dt>Town Not In Name?</dt> <dd>{{ user.space.town_not_in_name }}</dd>
+                        <dt>Have Premises?</dt> <dd>{{ user.space.have_premises }}</dd>
+                        <dt>Changed Date</dt> <dd>{{ user.space.changed_date }}</dd>
+                    </dl>
+
+                    <hr/>
+
+                    <h4>Other Registered Users from {{ user.space.name }}</h4>
+                    {% if associated_users %}
+                        <ul>
+                            {% for au in associated_users %}
+                                {% if au != user %}
+                                    <li>{{ au.first_name }} {{ au.last_name }}</li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+
+
+        {% endif %}
+    </div>
+</div>
+
+
+
+
+{% endblock %}
