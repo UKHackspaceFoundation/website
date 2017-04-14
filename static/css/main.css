@@ -22,6 +22,9 @@ h2 {
 .alert {
     padding: 21px 15px;
 }
+.alert-sm {
+    padding: 10px 15px;
+}
 
 @media (max-width: 991px) {
   .navbar-header {
