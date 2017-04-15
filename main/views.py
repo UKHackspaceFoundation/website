@@ -49,7 +49,7 @@ class UserUpdate(UpdateView):
 
 class SpaceUpdate(UpdateView):
     model = Space
-    fields = ['name', 'status', 'main_website_url', 'email','have_premises', 'address_first_line', 'town', 'region', 'postcode', 'country', 'lat', 'lng']
+    fields = ['name', 'status', 'main_website_url', 'email','have_premises', 'address_first_line', 'town', 'region', 'postcode', 'country', 'lat', 'lng', 'logo_image_url']
     success_url = '/home'
 
     def get_object(self, queryset=None):

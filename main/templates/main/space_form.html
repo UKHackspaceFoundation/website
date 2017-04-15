@@ -55,6 +55,13 @@
                 </div>
             </div>
             <div class="form-group">
+                <label for="inputLogo" class="col-sm-2 control-label">Logo URL</label>
+                <div class="col-sm-10">
+                    {% render_field form.logo_image_url class+="form-control" %}
+                </div>
+            </div>
+
+            <div class="form-group">
                 <label for="inputHavePremises" class="col-sm-2 control-label">Have Premises?</label>
                 <div class="col-sm-10">
                     {% render_field form.have_premises class+="form-control" %}
