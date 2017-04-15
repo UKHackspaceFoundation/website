@@ -4,6 +4,8 @@ from . import views
 
 urlpatterns = [
     url(r'^$', views.index, name='index'),
+    url(r'^edit-profile$', views.UserUpdate.as_view(), name='edit-profile'),
+    url(r'^edit-space-profile$', views.SpaceUpdate.as_view(), name='edit-space-profile'),
     url(r'^foundation/(?P<path>.*)$', views.foundation, name='foundation'),
     url(r'^gitinfo$', views.gitinfo, name='gitinfo'),
     url(r'^home$', views.home, name='home'),
@@ -18,5 +20,4 @@ urlpatterns = [
     url(r'^spaces.geojson$', views.geojson, name='geojson'),
     url(r'^space_detail$', views.space_detail, name='space_detail'),
     url(r'^start-a-space$', views.starting, name='starting'),
-    url(r'^edit-profile$', views.UserUpdate.as_view(), name='edit-profile'),
 ]

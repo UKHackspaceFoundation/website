@@ -53,14 +53,13 @@
         {% if user.space %}
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <a href="" class="btn-sm btn-primary pull-right">Edit Profile</a>
+                    <a href="/edit-space-profile" class="btn-sm btn-primary pull-right">Edit Profile</a>
                     <h3 class="panel-title">Your Hackspace</h3>
                 </div>
                 <div class="panel-body">
 
-                    <dl class="dl-horizontal">
+                    <dl class="dl-horizontal no-margin">
                         <dt>Name</dt> <dd><h3>{{ user.space.name }}</h3></dd>
-                        <dt>Classification</dt> <dd>{{ user.space.classification }}</dd>
                         <dt>Status</dt> <dd>{{ user.space.status }}</dd>
                         <dt>Website</dt> <dd><a href="{{ user.space.main_website_url }}">{{ user.space.main_website_url }}</a></dd>
                         <dt>Email</dt> <dd><a href="mailto:{{ user.space.email }}">{{ user.space.email }}</a></dd>

@@ -37,6 +37,7 @@ def home(request):
         'associated_users': associated_users
     })
 
+
 class UserUpdate(UpdateView):
     model = User
     fields = ['email', 'first_name', 'last_name', 'space']
@@ -44,6 +45,16 @@ class UserUpdate(UpdateView):
 
     def get_object(self, queryset=None):
         return self.request.user
+
+
+class SpaceUpdate(UpdateView):
+    model = Space
+    fields = ['name', 'status', 'main_website_url', 'email','have_premises', 'address_first_line', 'town', 'region', 'postcode', 'country']
+    success_url = '/home'
+
+    def get_object(self, queryset=None):
+        return self.request.user.space
+
 
 # return space info as json - used for rendering map on homepage
 def spaces(request):
@@ -112,7 +123,6 @@ def import_spaces(request):
                 country=valueOrBlank(s, 'country', ''),
                 region=valueOrBlank(s, 'region', ''),
                 have_premises=valueOrBlank(s, 'havePremises', 'No') == 'Yes',
-                town_not_in_name=valueOrBlank(s, 'townNotInName', 'No') == 'Yes',
                 address_first_line=valueOrBlank(s, 'addressFirstLine', ''),
                 postcode=valueOrBlank(s, 'postcode', ''),
                 lat=valueOrBlank(s, 'lat', 0.0),
@@ -120,7 +130,6 @@ def import_spaces(request):
                 main_website_url=valueOrBlank(s, 'mainWebsiteUrl', ''),
                 logo_image_url=valueOrBlank(s, 'logoImageUrl', ''),
                 status=valueOrBlank(s, 'status', ''),
-                classification=valueOrBlank(s, 'classification', ''),
                 email=valueOrBlank(s, 'contactEmail', ''),
             )
             srecord.save()

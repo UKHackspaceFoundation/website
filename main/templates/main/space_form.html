@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Edit Space | {{ block.super }}{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-md-8">
+        <h1>Edit Space Profile</h1>
+
+        {{ form.non_field_errors }}
+        {{ form.errors }}
+
+        <form method="POST" class="form-horizontal">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="inputName" class="col-sm-2 control-label">Name</label>
+                <div class="col-sm-10">
+                    {% if form.name.errors %}
+                        {% for error in form.name.errors %}
+                            <div class="alert alert-sm alert-danger">{{ error|escape }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    {% render_field form.name class+="form-control" %}
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputStatus" class="col-sm-2 control-label">Status</label>
+                <div class="col-sm-10">
+                    {% if form.status.errors %}
+                        {% for error in form.status.errors %}
+                            <div class="alert alert-sm alert-danger">{{ error|escape }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    {% render_field form.status class+="form-control" %}
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputWebsite" class="col-sm-2 control-label">Website</label>
+                <div class="col-sm-10">
+                    {% render_field form.main_website_url class+="form-control" %}
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputEmail" class="col-sm-2 control-label">Email</label>
+                <div class="col-sm-10">
+                    {% if form.email.errors %}
+                        {% for error in form.email.errors %}
+                            <div class="alert alert-sm alert-danger">{{ error|escape }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    {% render_field form.email class+="form-control" %}
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputHavePremises" class="col-sm-2 control-label">Have Premises?</label>
+                <div class="col-sm-10">
+                    {% render_field form.have_premises class+="form-control" %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="inputAddress" class="col-sm-2 control-label">Address</label>
+                <div class="col-sm-10">
+                    {% render_field form.address_first_line class+="form-control" %}
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputTown" class="col-sm-2 control-label">Town</label>
+                <div class="col-sm-10">
+                    {% render_field form.town class+="form-control" %}
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputRegion" class="col-sm-2 control-label">Region</label>
+                <div class="col-sm-10">
+                    {% render_field form.region class+="form-control" %}
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputPostcode" class="col-sm-2 control-label">Postcode</label>
+                <div class="col-sm-10">
+                    {% render_field form.postcode class+="form-control" %}
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputCountry" class="col-sm-2 control-label">Country</label>
+                <div class="col-sm-10">
+                    {% render_field form.country class+="form-control" %}
+                </div>
+            </div>
+
+
+
+
+
+
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <button type="submit" class="btn btn-primary pull-right">Update</button>
+
+                    <a href="/home" class="btn btn-danger">Cancel</a>
+                </div>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}

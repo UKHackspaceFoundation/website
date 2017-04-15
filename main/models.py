@@ -17,20 +17,33 @@ class User(AbstractUser):
 
 class Space(models.Model):
 
+    STATUS_CHOICES = (
+        ("Active", "Active"),
+        ("Starting", "Starting"),
+        ("Suspended", "Suspended"),
+        ("Defunct", "DEFUNCT"),
+    )
+
+    COUNTRY_CHOICES = (
+        ("England", "England"),
+        ("Guernsey","Guernsey"),
+        ("Ireland", "Ireland"),
+        ("Scotland", "Scotland"),
+        ("Wales", "Wales"),
+    )
+
     name = models.CharField(max_length=100)
     town = models.CharField(max_length=100, blank=True)
-    country = models.CharField(max_length=50)
-    region = models.CharField(max_length=100)
-    have_premises = models.BooleanField()
-    town_not_in_name = models.BooleanField()
+    country = models.CharField(max_length=50, choices=COUNTRY_CHOICES, default='ENGLAND')
+    region = models.CharField(max_length=100, blank=True)
+    have_premises = models.BooleanField(default=False)
     address_first_line = models.CharField(max_length=250, blank=True)
     postcode = models.CharField(max_length=9, blank=True)
     lat = models.DecimalField('latitude', max_digits=10, decimal_places=7)
     lng = models.DecimalField('longitude', max_digits=10, decimal_places=7)
     main_website_url = models.URLField(blank=True)
     logo_image_url = models.URLField(blank=True)
-    status = models.CharField(max_length=20)
-    classification = models.CharField(max_length=20)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACTIVE')
     changed_date = models.DateTimeField(default=timezone.now)
     email = models.CharField(max_length=200, blank=True)
 
