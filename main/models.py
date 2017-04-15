@@ -10,6 +10,9 @@ class User(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
+    class Meta:
+        ordering = ["first_name"]
+
 
 
 class Space(models.Model):
