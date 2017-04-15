@@ -18,4 +18,5 @@ urlpatterns = [
     url(r'^spaces.geojson$', views.geojson, name='geojson'),
     url(r'^space_detail$', views.space_detail, name='space_detail'),
     url(r'^start-a-space$', views.starting, name='starting'),
+    url(r'^edit-profile$', views.UserUpdate.as_view(), name='edit-profile'),
 ]

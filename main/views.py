@@ -14,6 +14,8 @@ from urllib.parse import urljoin
 from main.models import User
 from dealer.git import git
 from django.conf import settings
+from django.views.generic.edit import UpdateView
+from django.urls import reverse_lazy
 
 
 def index(request):
@@ -35,6 +37,13 @@ def home(request):
         'associated_users': associated_users
     })
 
+class UserUpdate(UpdateView):
+    model = User
+    fields = ['email', 'first_name', 'last_name', 'space']
+    success_url = '/home'
+
+    def get_object(self, queryset=None):
+        return self.request.user
 
 # return space info as json - used for rendering map on homepage
 def spaces(request):
