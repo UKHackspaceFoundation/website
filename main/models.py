@@ -18,7 +18,6 @@ class User(AbstractUser):
 class Space(models.Model):
 
     name = models.CharField(max_length=100)
-    longname = models.CharField(max_length=200)
     town = models.CharField(max_length=100, blank=True)
     country = models.CharField(max_length=50)
     region = models.CharField(max_length=100)
@@ -33,6 +32,7 @@ class Space(models.Model):
     status = models.CharField(max_length=20)
     classification = models.CharField(max_length=20)
     changed_date = models.DateTimeField(default=timezone.now)
+    email = models.CharField(max_length=200, blank=True)
 
     class Meta:
         ordering = ["name"]
