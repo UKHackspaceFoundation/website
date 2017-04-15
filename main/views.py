@@ -49,11 +49,16 @@ class UserUpdate(UpdateView):
 
 class SpaceUpdate(UpdateView):
     model = Space
-    fields = ['name', 'status', 'main_website_url', 'email','have_premises', 'address_first_line', 'town', 'region', 'postcode', 'country']
+    fields = ['name', 'status', 'main_website_url', 'email','have_premises', 'address_first_line', 'town', 'region', 'postcode', 'country', 'lat', 'lng']
     success_url = '/home'
 
     def get_object(self, queryset=None):
         return self.request.user.space
+
+    def get_context_data(self, **kwargs):
+        context = super(SpaceUpdate, self).get_context_data(**kwargs)
+        context['MAPBOX_ACCESS_TOKEN'] = getattr(settings, "MAPBOX_ACCESS_TOKEN", None)
+        return context
 
 
 # return space info as json - used for rendering map on homepage

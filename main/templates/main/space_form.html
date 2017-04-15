@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% load widget_tweaks %}
 
 {% block title %}Edit Space | {{ block.super }}{% endblock %}
@@ -92,6 +93,15 @@
             </div>
 
 
+            <div class="form-group">
+                <label for="inputMap" class="col-sm-2 control-label">Map</label>
+                <div class="col-sm-10">
+                    <input type="hidden" id="id_lat" name="lat" value="{{ form.lat.value }}"/>
+                    <input type="hidden" id="id_lng" name="lng" value="{{ form.lng.value }}"/>
+
+                    <div id="map" style="height:300px;"></div>
+                </div>
+            </div>
 
 
 
@@ -108,4 +118,73 @@
     </div>
 </div>
 
+{% endblock %}
+
+
+{% block js %}
+    {{ block.super }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css"
+        integrity="sha384-roIisdke7t73jKsr2CM69N0uJch+a+lQBCuw3Li2ZuLKaWn46fxTAp31h9VA4odd"
+        crossorigin="anonymous">
+    <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"
+        integrity="sha384-9fzrQY4JobN87hT5sQ0JnL9XZQ5q94Qj46ZFqpcBzz03D3UDKAkN/pKct1IVlP2Y"
+        crossorigin="anonymous"></script>
+
+
+    <script>
+    var data = [];
+    var map, infowindow;
+    var mapReady = false;
+    var bigMarkerLayer, smallMarkerLayer;
+
+    var lat = {{ form.lat.value }};
+    var lng = {{ form.lng.value }};
+
+
+    function initMap() {
+
+        map = L.map('map').setView([lat, lng], 16);
+
+        L.tileLayer(
+            'https://api.mapbox.com/styles/v1/axford/cj1c0rdnm00cc2smk5tz8e9yg/tiles/256/{z}/{x}/{y}?access_token={{ MAPBOX_ACCESS_TOKEN }}', {
+                tileSize: 256,
+                zoomOffset: 0,
+                attribution: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+
+        mapReady = true;
+
+        var bigIcon = L.icon({
+            iconUrl: '{% static "images/marker-icon.png" %}',
+            shadowUrl: '{% static "images/marker-shadow.png" %}',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [0, -41],
+            shadowSize: [41,41],
+            shadowAnchor: [14,41]
+        });
+
+
+        // big marker
+        var bm = L.marker([lat, lng], {
+          icon: bigIcon,
+          draggable: 'true'
+        });
+        bm.on('dragend', function(event){
+            var marker = event.target;
+            var position = marker.getLatLng();
+            marker.setLatLng(new L.LatLng(position.lat, position.lng),{ icon: bigIcon, draggable:'true'} );
+            map.panTo(new L.LatLng(position.lat, position.lng))
+
+            // update hidden form values
+            $("#id_lat").val(position.lat.toFixed(7));
+            $("#id_lng").val(position.lng.toFixed(7));
+        });
+        bm.addTo(map);
+    }
+
+    // init map
+    initMap();
+
+    </script>
 {% endblock %}
