@@ -19,6 +19,14 @@ h2 {
     border-bottom: 1px solid #eee;
 }
 
+dd {
+    margin-left: 15px;
+}
+
+.no-margin {
+    margin:0px 0px;
+}
+
 .alert {
     padding: 21px 15px;
 }

@@ -108,7 +108,6 @@ def import_spaces(request):
         if len(q) == 0:
             srecord = Space(
                 name=valueOrBlank(s, 'name', ''),
-                longname=valueOrBlank(s, 'longname', ''),
                 town=valueOrBlank(s, 'town', ''),
                 country=valueOrBlank(s, 'country', ''),
                 region=valueOrBlank(s, 'region', ''),
@@ -121,7 +120,8 @@ def import_spaces(request):
                 main_website_url=valueOrBlank(s, 'mainWebsiteUrl', ''),
                 logo_image_url=valueOrBlank(s, 'logoImageUrl', ''),
                 status=valueOrBlank(s, 'status', ''),
-                classification=valueOrBlank(s, 'classification', '')
+                classification=valueOrBlank(s, 'classification', ''),
+                email=valueOrBlank(s, 'contactEmail', ''),
             )
             srecord.save()
         # else
