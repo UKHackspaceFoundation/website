@@ -102,7 +102,11 @@ def geojson(request):
 
 @login_required
 def space_detail(request):
-    return render(request, 'main/space_detail.html', {'spaces': Space.objects.all()})
+    if request.user.is_authenticated and request.user.is_staff:
+        return render(request, 'main/space_detail.html', {'spaces': Space.objects.all()})
+    else:
+        messages.add_message(request, messages.ERROR, "You must be staff to access that page", "alert-danger")
+        return redirect('/')
 
 
 def valueOrBlank(obj, attr, d):
@@ -145,6 +149,7 @@ def import_spaces(request):
                 # existing record, do nothing for now
         return redirect('/space_detail')
     else:
+        messages.add_message(request, messages.ERROR, "You must be staff to access that page", "alert-danger")
         return redirect('/')
 
 
