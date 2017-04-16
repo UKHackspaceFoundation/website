@@ -40,8 +40,9 @@ def home(request):
 
 class UserUpdate(UpdateView):
     model = User
-    fields = ['email', 'first_name', 'last_name', 'space']
+    #fields = ['email', 'first_name', 'last_name', 'space']
     success_url = '/home'
+    form_class = CustomUserCreationForm
 
     def get_object(self, queryset=None):
         return self.request.user
