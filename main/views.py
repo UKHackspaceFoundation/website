@@ -5,6 +5,7 @@ from django.views import View
 from django.http import JsonResponse
 import json
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.views.generic.edit import CreateView
 from .models import Space
 from .forms import CustomUserCreationForm
@@ -101,13 +102,9 @@ def geojson(request):
     return JsonResponse(geo)
 
 
-@login_required
+@staff_member_required(login_url='/login')
 def space_detail(request):
-    if request.user.is_authenticated and request.user.is_staff:
-        return render(request, 'main/space_detail.html', {'spaces': Space.objects.all()})
-    else:
-        messages.add_message(request, messages.ERROR, "You must be staff to access that page", "alert-danger")
-        return redirect('/')
+    return render(request, 'main/space_detail.html', {'spaces': Space.objects.all()})
 
 
 def valueOrBlank(obj, attr, d):
@@ -117,41 +114,36 @@ def valueOrBlank(obj, attr, d):
         return d
 
 
-@login_required
+@staff_member_required(login_url='/login')
 def import_spaces(request):
+    json_data = open('static/data.json')
+    data = json.load(json_data)
 
-    if request.user.is_authenticated and request.user.is_staff:
+    for s in data:
 
-        json_data = open('static/data.json')
-        data = json.load(json_data)
+        # see if record already exists
+        q = Space.objects.filter(name=s['name'])
+        if len(q) == 0:
+            srecord = Space(
+                name=valueOrBlank(s, 'name', ''),
+                town=valueOrBlank(s, 'town', ''),
+                country=valueOrBlank(s, 'country', ''),
+                region=valueOrBlank(s, 'region', ''),
+                have_premises=valueOrBlank(s, 'havePremises', 'No') == 'Yes',
+                address_first_line=valueOrBlank(s, 'addressFirstLine', ''),
+                postcode=valueOrBlank(s, 'postcode', ''),
+                lat=valueOrBlank(s, 'lat', 0.0),
+                lng=valueOrBlank(s, 'lng', 0.0),
+                main_website_url=valueOrBlank(s, 'mainWebsiteUrl', ''),
+                logo_image_url=valueOrBlank(s, 'logoImageUrl', ''),
+                status=valueOrBlank(s, 'status', ''),
+                email=valueOrBlank(s, 'contactEmail', ''),
+            )
+            srecord.save()
+        # else
+            # existing record, do nothing for now
+    return redirect('/space_detail')
 
-        for s in data:
-
-            # see if record already exists
-            q = Space.objects.filter(name=s['name'])
-            if len(q) == 0:
-                srecord = Space(
-                    name=valueOrBlank(s, 'name', ''),
-                    town=valueOrBlank(s, 'town', ''),
-                    country=valueOrBlank(s, 'country', ''),
-                    region=valueOrBlank(s, 'region', ''),
-                    have_premises=valueOrBlank(s, 'havePremises', 'No') == 'Yes',
-                    address_first_line=valueOrBlank(s, 'addressFirstLine', ''),
-                    postcode=valueOrBlank(s, 'postcode', ''),
-                    lat=valueOrBlank(s, 'lat', 0.0),
-                    lng=valueOrBlank(s, 'lng', 0.0),
-                    main_website_url=valueOrBlank(s, 'mainWebsiteUrl', ''),
-                    logo_image_url=valueOrBlank(s, 'logoImageUrl', ''),
-                    status=valueOrBlank(s, 'status', ''),
-                    email=valueOrBlank(s, 'contactEmail', ''),
-                )
-                srecord.save()
-            # else
-                # existing record, do nothing for now
-        return redirect('/space_detail')
-    else:
-        messages.add_message(request, messages.ERROR, "You must be staff to access that page", "alert-danger")
-        return redirect('/')
 
 
 def starting(request):
