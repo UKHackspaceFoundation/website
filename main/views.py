@@ -114,33 +114,38 @@ def valueOrBlank(obj, attr, d):
 
 @login_required
 def import_spaces(request):
-    json_data = open('main/static/data.json')
-    data = json.load(json_data)
 
-    for s in data:
+    if request.user.is_authenticated and request.user.is_staff:
 
-        # see if record already exists
-        q = Space.objects.filter(name=s['name'])
-        if len(q) == 0:
-            srecord = Space(
-                name=valueOrBlank(s, 'name', ''),
-                town=valueOrBlank(s, 'town', ''),
-                country=valueOrBlank(s, 'country', ''),
-                region=valueOrBlank(s, 'region', ''),
-                have_premises=valueOrBlank(s, 'havePremises', 'No') == 'Yes',
-                address_first_line=valueOrBlank(s, 'addressFirstLine', ''),
-                postcode=valueOrBlank(s, 'postcode', ''),
-                lat=valueOrBlank(s, 'lat', 0.0),
-                lng=valueOrBlank(s, 'lng', 0.0),
-                main_website_url=valueOrBlank(s, 'mainWebsiteUrl', ''),
-                logo_image_url=valueOrBlank(s, 'logoImageUrl', ''),
-                status=valueOrBlank(s, 'status', ''),
-                email=valueOrBlank(s, 'contactEmail', ''),
-            )
-            srecord.save()
-        # else
-            # existing record, do nothing for now
-    return redirect('/space_detail')
+        json_data = open('static/data.json')
+        data = json.load(json_data)
+
+        for s in data:
+
+            # see if record already exists
+            q = Space.objects.filter(name=s['name'])
+            if len(q) == 0:
+                srecord = Space(
+                    name=valueOrBlank(s, 'name', ''),
+                    town=valueOrBlank(s, 'town', ''),
+                    country=valueOrBlank(s, 'country', ''),
+                    region=valueOrBlank(s, 'region', ''),
+                    have_premises=valueOrBlank(s, 'havePremises', 'No') == 'Yes',
+                    address_first_line=valueOrBlank(s, 'addressFirstLine', ''),
+                    postcode=valueOrBlank(s, 'postcode', ''),
+                    lat=valueOrBlank(s, 'lat', 0.0),
+                    lng=valueOrBlank(s, 'lng', 0.0),
+                    main_website_url=valueOrBlank(s, 'mainWebsiteUrl', ''),
+                    logo_image_url=valueOrBlank(s, 'logoImageUrl', ''),
+                    status=valueOrBlank(s, 'status', ''),
+                    email=valueOrBlank(s, 'contactEmail', ''),
+                )
+                srecord.save()
+            # else
+                # existing record, do nothing for now
+        return redirect('/space_detail')
+    else:
+        return redirect('/')
 
 
 def starting(request):
