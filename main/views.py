@@ -1,13 +1,13 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.forms import UserCreationForm
 from django.views import View
 from django.http import JsonResponse
 import json
 from django.contrib.auth.decorators import login_required
 from django.views.generic.edit import CreateView
 from .models import Space
+from .forms import CustomUserCreationForm
 import requests
 import markdown
 from urllib.parse import urljoin
@@ -184,12 +184,6 @@ class Login(View):
 def logout_view(request):
     logout(request)
     return redirect('/')
-
-
-class CustomUserCreationForm(UserCreationForm):
-    class Meta(UserCreationForm.Meta):
-        model = User
-        fields = ('email','first_name','last_name','space',)
 
 
 class SignupView(CreateView):
