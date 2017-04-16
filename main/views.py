@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic.edit import CreateView
 from .models import Space
 from .forms import CustomUserCreationForm
+from django.contrib.auth.forms import PasswordResetForm
 import requests
 import markdown
 from urllib.parse import urljoin
@@ -40,7 +41,6 @@ def home(request):
 
 class UserUpdate(UpdateView):
     model = User
-    #fields = ['email', 'first_name', 'last_name', 'space']
     success_url = '/home'
     form_class = CustomUserCreationForm
 
@@ -191,15 +191,26 @@ class SignupView(CreateView):
     form_class = CustomUserCreationForm
     model = User
     template_name = 'main/signup.html'
-    success_url = "/home"
 
     def form_valid(self, form):
-        res = super().form_valid(form)
-        user = authenticate(username=form.cleaned_data['email'], password=form.cleaned_data['password1'])
-        if user is not None:
-            if user.is_active:
-                login(self.request, user)
-        return res
+        obj = form.save(commit=False)
+        obj.set_password(User.objects.make_random_password())
+        obj.save()
+
+        # PasswordResetForm only requires the "email" field, so will validate.
+        reset_form = PasswordResetForm(self.request.POST)
+        reset_form.is_valid()  # Must trigger validation
+        # Copied from django/contrib/auth/views.py : password_reset
+        opts = {
+            'use_https': self.request.is_secure(),
+            'email_template_name': 'main/verification.html',
+            'subject_template_name': 'main/verification_subject.txt',
+            'request': self.request,
+        }
+        # This form sends the email on save()
+        reset_form.save(**opts)
+
+        return redirect('signup-done')
 
 
 def resources(request, path):

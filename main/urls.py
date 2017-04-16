@@ -1,6 +1,7 @@
 from django.conf.urls import url
 
 from . import views
+from django.contrib.auth import views as authviews
 
 urlpatterns = [
     url(r'^$', views.index, name='index'),
@@ -20,4 +21,15 @@ urlpatterns = [
     url(r'^spaces.geojson$', views.geojson, name='geojson'),
     url(r'^space_detail$', views.space_detail, name='space_detail'),
     url(r'^start-a-space$', views.starting, name='starting'),
+
+    url(r'^signup-done/$', authviews.password_reset_done, {
+        'template_name': 'main/signup_done.html',
+    }, name='signup-done'),
+    url(r'^signup/password/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$', authviews.password_reset_confirm, {
+        'template_name': 'main/password_reset_confirm.html',
+        'post_reset_redirect': 'signup-complete',
+    }, name='password-reset-confirm'),
+    url(r'^signup-complete$', authviews.password_reset_complete, {
+        'template_name': 'main/signup_complete.html',
+    }, name='signup-complete'),
 ]
