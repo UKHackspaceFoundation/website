@@ -32,4 +32,10 @@ urlpatterns = [
     url(r'^signup-complete$', authviews.password_reset_complete, {
         'template_name': 'main/signup_complete.html',
     }, name='signup-complete'),
+    url(r'^password-reset$', authviews.password_reset, {
+        'template_name': 'main/password_reset.html',
+        'post_reset_redirect': 'signup-done',
+        'email_template_name': 'main/password_reset_email.html',
+        'subject_template_name': 'main/password_reset_subject.txt'
+    }, name='password-reset'),
 ]
