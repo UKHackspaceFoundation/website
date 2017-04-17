@@ -5,7 +5,9 @@
 
 {% block content %}
 
-<img src="{{ user.space.logo_image_url }}" class="home-hackspace-logo pull-right"/>
+{% if user.space %}
+    <img src="{{ user.space.logo_image_url }}" class="home-hackspace-logo pull-right"/>
+{% endif %}
 
 <h1>Hola, {{ user.first_name }}</h1>
 
@@ -13,7 +15,7 @@
     <div class="col-md-6">
         <div class="panel panel-default">
             <div class="panel-heading">
-                <a href="/edit-profile" class="btn-sm btn-primary pull-right">Edit Profile</a>
+                <a href="{% url 'edit-profile' %}" class="btn-sm btn-primary pull-right">Edit Profile</a>
                 <h3 class="panel-title">Your Profile</h3>
             </div>
             <div class="panel-body">
@@ -31,13 +33,20 @@
             </div>
             <div class="panel-body">
 
-                <p>Irrespective of whether your space is a member of the foundation, you may apply for individual membership:</p>
+
+                {% if user.space %}
+                    <p>Irrespective of whether your space is a member of the foundation, you may apply for individual membership:</p>
+                {% else %}
+                    <p>Click below to apply for individual membership to the foundation:</p>
+                {% endif %}
+
+
                 <a href="/join/supporter" class="btn btn-success">Apply</a>
 
             </div>
         </div>
 
-
+<!---
         <div class="panel panel-default">
             <div class="panel-heading">
                 <h3 class="panel-title">Membership Benefits</h3>
@@ -47,17 +56,19 @@
 
             </div>
         </div>
+--->
     </div>
 
     <div class="col-md-6">
-        {% if user.space %}
-            <div class="panel panel-default">
-                <div class="panel-heading">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                {% if user.space %}
                     <a href="/edit-space-profile" class="btn-sm btn-primary pull-right">Edit Profile</a>
-                    <h3 class="panel-title">Your Hackspace</h3>
-                </div>
-                <div class="panel-body">
-
+                {% endif %}
+                <h3 class="panel-title">Your Hackspace</h3>
+            </div>
+            <div class="panel-body">
+                {% if user.space %}
                     <dl class="dl-horizontal no-margin">
                         <dt>Name</dt> <dd><h3>{{ user.space.name }}</h3></dd>
                         <dt>Status</dt> <dd>{{ user.space.status }}</dd>
@@ -71,9 +82,14 @@
                         <dt>Country</dt> <dd>{{ user.space.country }}</dd>
                         <dt>Last Updated</dt> <dd>{{ user.space.changed_date }}</dd>
                     </dl>
-                </div>
-            </div>
+                {% else %}
+                    <p class="no-margin">You are not currently associated with a hackspace - you can change this by <a href="{% url 'edit-profile' %}">updating your profile</a></p>
+                {% endif %}
 
+            </div>
+        </div>
+
+        {% if user.space %}
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <h3 class="panel-title">{{ user.space.name }}'s Membership</h3>
