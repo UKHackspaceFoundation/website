@@ -189,20 +189,28 @@ class SignupView(CreateView):
         obj.set_password(User.objects.make_random_password())
         obj.save()
 
-        # PasswordResetForm only requires the "email" field, so will validate.
-        reset_form = PasswordResetForm(self.request.POST)
-        reset_form.is_valid()  # Must trigger validation
-        # Copied from django/contrib/auth/views.py : password_reset
-        opts = {
-            'use_https': self.request.is_secure(),
-            'email_template_name': 'main/verification.html',
-            'subject_template_name': 'main/verification_subject.txt',
-            'request': self.request,
-        }
-        # This form sends the email on save()
-        reset_form.save(**opts)
+        try:
+            # PasswordResetForm only requires the "email" field, so will validate.
+            reset_form = PasswordResetForm(self.request.POST)
+            reset_form.is_valid()  # Must trigger validation
+            # Copied from django/contrib/auth/views.py : password_reset
+            opts = {
+                'use_https': self.request.is_secure(),
+                'email_template_name': 'main/verification.html',
+                'subject_template_name': 'main/verification_subject.txt',
+                'request': self.request,
+            }
+            # This form sends the email on save()
+            reset_form.save(**opts)
 
-        return redirect('signup-done')
+            return redirect('signup-done')
+        except Exception as e:
+            # boo - most likely error is ConnectionRefused, but could be others
+            # best to delete partially formed user object so we don't leave useless entries in the database
+            obj.delete()
+            messages.error(self.request, "Error emailing verification link: " + str(e), extra_tags='alert-danger')
+
+            return redirect('signup')
 
 
 def resources(request, path):
