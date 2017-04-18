@@ -4,13 +4,33 @@ from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 
 class User(AbstractUser):
+
+    SPACE_STATUS_CHOICES = (
+        ("Blank", "Blank"),   #space is blank
+        ("Pending", "Pending"),  # space relationship has changed, approval is pending
+        ("Approved", "Approved"),  # space relationship has been approved
+        ("Rejected", "Rejected"),  # space relationship has been rejected
+    )
+
+    # disable default username field
     username = None
+    # add email, make it the unique field
     email = models.EmailField(_('email address'), unique=True)
+    # relationship to users selected space
     space = models.ForeignKey('Space', models.SET_NULL, blank=True, null=True)
+    # status of space relationship:
+    space_status = models.CharField(max_length=8, choices=SPACE_STATUS_CHOICES, default='Blank')
+    # who has been emailed to approve the space relationship:
+    space_approver = models.EmailField(_('space approver email address'), blank=True)
+    # when was the space approval requested (so we can flag slow responses):
+    space_request_date = models.DateTimeField(default=timezone.now)
+    # override default
     USERNAME_FIELD = 'email'
+    # disable default required fields
     REQUIRED_FIELDS = []
 
     class Meta:
+        # set default ordering to be on first_name
         ordering = ["first_name"]
 
 
