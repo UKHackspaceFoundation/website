@@ -1,5 +1,5 @@
 run: init
-	./ENV/bin/python ./manage.py runserver
+	DJANGO_SETTINGS_MODULE=hsf.local_settings ./ENV/bin/python ./manage.py runserver
 
 test:
 	./ENV/bin/flake8 ./main
