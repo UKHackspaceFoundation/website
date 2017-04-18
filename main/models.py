@@ -58,6 +58,8 @@ class User(AbstractUser):
     space_approver = models.EmailField(_('space approver email address'), blank=True)
     # when was the space approval requested (so we can flag slow responses):
     space_request_date = models.DateTimeField(default=timezone.now)
+    # random hash to verify source of approve/reject responses
+    space_request_key = models.CharField(max_length=32, blank=True)
     # override default
     USERNAME_FIELD = 'email'
     # disable default required fields
