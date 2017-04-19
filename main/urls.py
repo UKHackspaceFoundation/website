@@ -38,4 +38,6 @@ urlpatterns = [
         'email_template_name': 'main/password_reset_email.html',
         'subject_template_name': 'main/password_reset_subject.txt'
     }, name='password-reset'),
+
+    url(r'^space-approval/(?P<key>.*)/(?P<action>.*)$', views.space_approval, name='space-approval'),
 ]

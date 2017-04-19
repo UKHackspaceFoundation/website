@@ -10,6 +10,7 @@ from django.views.generic.edit import CreateView
 from .models import Space
 from .forms import CustomUserCreationForm
 from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.mixins import LoginRequiredMixin
 import requests
 import markdown
 from urllib.parse import urljoin
@@ -40,7 +41,7 @@ def home(request):
     })
 
 
-class UserUpdate(UpdateView):
+class UserUpdate(LoginRequiredMixin, UpdateView):
     model = User
     success_url = '/home'
     form_class = CustomUserCreationForm
@@ -49,7 +50,7 @@ class UserUpdate(UpdateView):
         return self.request.user
 
 
-class SpaceUpdate(UpdateView):
+class SpaceUpdate(LoginRequiredMixin, UpdateView):
     model = Space
     fields = ['name', 'status', 'main_website_url', 'email','have_premises', 'address_first_line', 'town', 'region', 'postcode', 'country', 'lat', 'lng', 'logo_image_url']
     success_url = '/home'
@@ -61,6 +62,13 @@ class SpaceUpdate(UpdateView):
         context = super(SpaceUpdate, self).get_context_data(**kwargs)
         context['MAPBOX_ACCESS_TOKEN'] = getattr(settings, "MAPBOX_ACCESS_TOKEN", None)
         return context
+
+    def dispatch(self, request, *args, **kwargs):
+        # make sure users have space_status='Approved'
+        if self.request.user.space_status != 'Approved':
+            # otherwise redirect to home
+            return redirect('/home')
+        return super(UpdateStory, self).dispatch(request, *args, **kwargs)
 
 
 # return space info as json - used for rendering map on homepage
@@ -211,6 +219,38 @@ class SignupView(CreateView):
             messages.error(self.request, "Error emailing verification link: " + str(e), extra_tags='alert-danger')
 
             return redirect('signup')
+
+
+def space_approval(request, key, action):
+
+    if action != 'approve' and action != 'reject':
+        # this shouldn't happen - just redirect to home
+        return redirect('/')
+
+    # lookup user info based on key
+    users = User.objects.filter(space_request_key=key)
+
+    # should only get one object back
+    if users.count() == 1:
+        user = users[0]
+
+        # update user object
+        user.space_status = 'Approved' if action=='approve' else 'Rejected'
+
+        user.save()
+
+        # make a context object for the template to render
+        context = {
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'hackspace': user.space.name,
+            'action': ('approving' if action=='approve' else 'rejecting')
+        }
+        return render(request, 'main/space_approval.html', context)
+
+    else:
+        # aargh - that's not right - redirect to home
+        return redirect('/')
 
 
 def resources(request, path):

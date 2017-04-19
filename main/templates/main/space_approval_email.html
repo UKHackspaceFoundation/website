@@ -1,7 +1,7 @@
 <p>You are receiving this email as {{ first_name }} {{ last_name }} ({{ email }}) has indicated they are a member of {{ hackspace }}.
 </p>
 
-<p>As the primary contact for {{ hackspace }}, please could you use the following links to <a href="{{ key }}">Approve</a> or <a href="{{ key }}">Reject</a> this request.
+<p>As the primary contact for {{ hackspace }}, please could you use the following links to <a href="https://{{ domain }}{% url 'space-approval' key=key action='approve'%}">Approve</a> or <a href="https://{{ domain }}{% url 'space-approval' key=key action='reject'%}">Reject</a> this request.
 </p>
 
 <p>Note: Approving this request will give {{ first_name}} the ability to:</p>
