@@ -50,7 +50,8 @@ class CustomUserCreationForm(ModelForm):
                 'first_name': user.first_name,
                 'last_name': user.last_name,
                 'hackspace': user.space.name,
-                'key': user.space_request_key
+                'key': user.space_request_key,
+                'domain': getattr(settings, "DOMAIN", None),
             })
 
             subject = "Is " + user.first_name +" " + user.last_name + " a member of " + user.space.name + "?"
