@@ -1,13 +1,15 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.forms import UserCreationForm
 from django.views import View
 from django.http import JsonResponse
 import json
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.views.generic.edit import CreateView
 from .models import Space
+from .forms import CustomUserCreationForm
+from django.contrib.auth.forms import PasswordResetForm
 import requests
 import markdown
 from urllib.parse import urljoin
@@ -41,8 +43,8 @@ def home(request):
 
 class UserUpdate(UpdateView):
     model = User
-    fields = ['email', 'first_name', 'last_name', 'space']
     success_url = '/home'
+    form_class = CustomUserCreationForm
 
     def get_object(self, queryset=None):
         return self.request.user
@@ -101,7 +103,7 @@ def geojson(request):
     return JsonResponse(geo)
 
 
-@login_required
+@staff_member_required(login_url='/login')
 def space_detail(request):
     return render(request, 'main/space_detail.html', {'spaces': Space.objects.all()})
 
@@ -113,9 +115,9 @@ def valueOrBlank(obj, attr, d):
         return d
 
 
-@login_required
+@staff_member_required(login_url='/login')
 def import_spaces(request):
-    json_data = open('main/static/data.json')
+    json_data = open('static/data.json')
     data = json.load(json_data)
 
     for s in data:
@@ -142,6 +144,7 @@ def import_spaces(request):
         # else
             # existing record, do nothing for now
     return redirect('/space_detail')
+
 
 
 def starting(request):
@@ -176,7 +179,7 @@ def logout_view(request):
     logout(request)
     return redirect('/')
 
-
+  
 class CustomUserCreationForm(UserCreationForm):
 
     # insert a field to indicate approval to Code of Conduct, defaults to false
@@ -193,20 +196,39 @@ class CustomUserCreationForm(UserCreationForm):
             raise forms.ValidationError("You must agree to the Code of Conduct to register")
         return data
 
-
+      
 class SignupView(CreateView):
     form_class = CustomUserCreationForm
     model = User
     template_name = 'main/signup.html'
-    success_url = "/home"
 
     def form_valid(self, form):
-        res = super().form_valid(form)
-        user = authenticate(username=form.cleaned_data['email'], password=form.cleaned_data['password1'])
-        if user is not None:
-            if user.is_active:
-                login(self.request, user)
-        return res
+        obj = form.save(commit=False)
+        obj.set_password(User.objects.make_random_password())
+        obj.save()
+
+        try:
+            # PasswordResetForm only requires the "email" field, so will validate.
+            reset_form = PasswordResetForm(self.request.POST)
+            reset_form.is_valid()  # Must trigger validation
+            # Copied from django/contrib/auth/views.py : password_reset
+            opts = {
+                'use_https': self.request.is_secure(),
+                'email_template_name': 'main/verification.html',
+                'subject_template_name': 'main/verification_subject.txt',
+                'request': self.request,
+            }
+            # This form sends the email on save()
+            reset_form.save(**opts)
+
+            return redirect('signup-done')
+        except Exception as e:
+            # boo - most likely error is ConnectionRefused, but could be others
+            # best to delete partially formed user object so we don't leave useless entries in the database
+            obj.delete()
+            messages.error(self.request, "Error emailing verification link: " + str(e), extra_tags='alert-danger')
+
+            return redirect('signup')
 
 
 def resources(request, path):

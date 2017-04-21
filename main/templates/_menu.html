@@ -30,9 +30,11 @@
             {{user}}<span class="caret"></span>
           </a>
           <ul class="dropdown-menu">
+             {% if user.is_staff %}
              <li><a href="/space_detail">Detailed Space Info</a></li>
              <li><a href="/gitinfo">Git Info</a></li>
              <li><a href="/admin">Admin</a></li>
+             {% endif %}
              <li><a href="/logout">Logout</a></li>
           </ul>
         </li>

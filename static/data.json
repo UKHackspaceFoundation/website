@@ -1663,25 +1663,25 @@
         "longname": "Wolverhampton Hackspace"
     },
     {
-        "name": "York hackspace",
+        "name": "York Hackspace",
         "nestaRecord": "Y",
         "town": "York",
         "country": "England",
-        "mainWebsiteUrl": "http://groups.google.com/group/york-hack-space",
+        "mainWebsiteUrl": "https://york.hackspace.org.uk/",
         "logoImageUrl": "https://york.hackspace.org.uk/blog/wp-content/uploads/2014/12/logo-150x150.png",
         "status": "Active",
         "classification": "Hackspace",
         "havePremises": "Yes",
-        "numMembers": 9,
+        "numMembers": 12,
         "contactEmail": "makers@york.hackspace.org.uk",
         "addressFirstLine": "Unit 1, 35 Hospital Fields Road",
         "postcode": "YO10 4DZ",
         "combinedAddress": "Unit 1, 35 Hospital Fields Road, York, YO10 4DZ, England",
-        "lat": 53.94506939999999,
-        "lng": -1.0779578,
-        "mapUrl": "http://maps.google.com/?q=53.9450694,-1.0779578",
+        "lat": 53.9461,
+        "lng": -1.0783,
+        "mapUrl": "http://maps.google.com/?q=53.9461,-1.0783",
         "region": "Yorkshire and the Humber",
         "townNotInName": false,
-        "longname": "York hackspace"
+        "longname": "York Hackspace"
     }
 ]
