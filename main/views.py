@@ -68,16 +68,23 @@ def home(request):
     })
 
 
-class UserUpdate(UpdateView):
+class UserUpdate(LoginRequiredMixin, UpdateView):
     model = User
     success_url = '/home'
     form_class = CustomUserCreationForm
 
+    # make request object available to form
+    def get_form_kwargs(self):
+        kw = super(UserUpdate, self).get_form_kwargs()
+        kw['request'] = self.request
+        return kw
+
+    # ensure the logged in user object is passed to the view/form
     def get_object(self, queryset=None):
         return self.request.user
 
 
-class SpaceUpdate(UpdateView):
+class SpaceUpdate(LoginRequiredMixin, UpdateView):
     model = Space
     fields = ['name', 'status', 'main_website_url', 'email','have_premises', 'address_first_line', 'town', 'region', 'postcode', 'country', 'lat', 'lng', 'logo_image_url']
     success_url = '/home'
@@ -89,6 +96,13 @@ class SpaceUpdate(UpdateView):
         context = super(SpaceUpdate, self).get_context_data(**kwargs)
         context['MAPBOX_ACCESS_TOKEN'] = getattr(settings, "MAPBOX_ACCESS_TOKEN", None)
         return context
+
+    def dispatch(self, request, *args, **kwargs):
+        # make sure users have space_status='Approved'
+        if self.request.user.space_status != 'Approved':
+            # otherwise redirect to home
+            return redirect('/home')
+        return super(UpdateStory, self).dispatch(request, *args, **kwargs)
 
 
 # return space info as json - used for rendering map on homepage
@@ -448,6 +462,12 @@ class SignupView(CreateView):
     model = User
     template_name = 'main/signup.html'
 
+    # make request object available to form
+    def get_form_kwargs(self):
+        kw = super(UserUpdate, self).get_form_kwargs()
+        kw['request'] = self.request
+        return kw
+
     def form_valid(self, form):
         obj = form.save(commit=False)
         obj.set_password(User.objects.make_random_password())
@@ -476,6 +496,35 @@ class SignupView(CreateView):
             logger.error("Error in SignupView - unable to send password reset email: "+str(e))
 
             return redirect('signup')
+
+
+def space_approval(request, key, action):
+
+    if action != 'approve' and action != 'reject':
+        # this shouldn't happen - just redirect to home
+        return redirect('/')
+
+    try:
+        # lookup user info based on key
+        user = User.objects.get(space_request_key=key)
+
+        # update user object
+        user.space_status = 'Approved' if action=='approve' else 'Rejected'
+
+        user.save()
+
+        # make a context object for the template to render
+        context = {
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'hackspace': user.space.name,
+            'action': ('approving' if action=='approve' else 'rejecting')
+        }
+        return render(request, 'main/space_approval.html', context)
+
+    except User.DoesNotExist as e:
+        # aargh - that's not right - redirect to home
+        return redirect('/')
 
 
 def resources(request, path):

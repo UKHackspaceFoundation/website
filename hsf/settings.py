@@ -148,5 +148,7 @@ STATICFILES_DIRS = [
 EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
 DEFAULT_FROM_EMAIL = "contact@hackspace.org.uk"
-
 BOARD_EMAIL = "contact@hackspace.org.uk"
+
+# Domain - used for generating hyperlinks in templates
+DOMAIN = "www.hackspace.org.uk"

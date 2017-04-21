@@ -102,7 +102,7 @@
     <div class="col-md-6">
         <div class="panel panel-default">
             <div class="panel-heading">
-                {% if user.space %}
+                {% if user.space_status == 'Approved' %}
                     <a href="/edit-space-profile" class="btn-sm btn-primary pull-right">Edit Profile</a>
                 {% endif %}
                 <h3 class="panel-title">Your Hackspace</h3>
@@ -122,6 +122,16 @@
                         <dt>Country</dt> <dd>{{ user.space.country }}</dd>
                         <dt>Last Updated</dt> <dd>{{ user.space.changed_date }}</dd>
                     </dl>
+
+                    {% if user.space_status == 'Pending' %}
+                    <div class="alert alert-warning no-margin" style="margin-top:15px">
+                        Note: We have emailed the primary contact for {{ user.space.name }} to verify your association with them.  Once this is approved, you will be able to maintain the {{ user.space.name }} profile information and apply for foundation membership.
+                    </div>
+                    {% elif user.space_status == 'Rejected' %}
+                    <div class="alert alert-danger no-margin" style="margin-top:15px">
+                        Your association with {{ user.space.name }} has been <b>rejected</b> by the primary contact for the space.  Please contact them directly to discuss the situation further: <a href="{{ user.space_approver }}">{{ user.space_approver }}</a>
+                    </div>
+                    {% endif %}
                 {% else %}
                     <p class="no-margin">You are not currently associated with a hackspace - you can change this by <a href="{% url 'edit-profile' %}">updating your profile</a></p>
                 {% endif %}
@@ -162,7 +172,6 @@
                     {% endif %}
                 </div>
             </div>
-
 
         {% endif %}
     </div>
