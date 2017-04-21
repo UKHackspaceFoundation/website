@@ -27,24 +27,36 @@
             </div>
         </div>
 
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Your Membership</h3>
+        {% if user.member_type != "Representative" %}
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Your Membership {% if user.member_status == "Pending" %} is Pending!{% endif %}</h3>
+                </div>
+                <div class="panel-body">
+
+                    {% if user.member_type == "None" %}
+
+                        {% if user.space %}
+                            <p>Irrespective of whether your space is a member of the foundation, you may apply for individual membership:</p>
+                        {% else %}
+                            <p>Click below to apply for individual membership to the foundation:</p>
+                        {% endif %}
+
+
+                        <a href="/join/supporter/1" class="btn btn-success">Apply</a>
+
+                    {% elif user.member_type == "Supporter" %}
+
+                        {% if user.member_status == "Pending" %}
+                            <p>Thankyou for your application, it is currently being reviewed by the Board</p>
+
+                        {% endif %}
+
+                    {% endif %}
+
+                </div>
             </div>
-            <div class="panel-body">
-
-
-                {% if user.space %}
-                    <p>Irrespective of whether your space is a member of the foundation, you may apply for individual membership:</p>
-                {% else %}
-                    <p>Click below to apply for individual membership to the foundation:</p>
-                {% endif %}
-
-
-                <a href="/join/supporter/1" class="btn btn-success">Apply</a>
-
-            </div>
-        </div>
+        {% endif %}
 
 <!---
         <div class="panel panel-default">

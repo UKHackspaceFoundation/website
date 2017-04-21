@@ -185,6 +185,12 @@ def join_supporter_step2(request):
 
     # store the redirect id
     request.user.gocardless_redirect_flow_id = redirect_flow.id
+
+    # update the type and status
+    request.user.member_type = 'Supporter'
+    request.user.member_status = 'Pending'
+
+    # commit changes to database
     request.user.save()
 
     print(redirect_flow.redirect_url)
@@ -194,9 +200,40 @@ def join_supporter_step2(request):
 @login_required
 def join_supporter_step3(request, session_token):
 
-    print(session_token)
+    if session_token != request.user.gocardless_session_token:
+        messages.error(request, 'Something went wrong, please restart your application', extra_tags='alert-danger')
+        return redirect(reverse('join_supporter_step1'))
 
-    return render(request, 'base.html')
+    # get gocardless client object
+    client = gocardless_pro.Client(
+        access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
+        environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
+    )
+
+    try:
+        redirect_flow = client.redirect_flows.complete(
+            request.GET.get('redirect_flow_id', ''),
+            params = {
+                'session_token': session_token
+            }
+        )
+
+        # save customer and mandate IDs
+        request.user.gocardless_mandate_id = redirect_flow.links.mandate
+        request.user.gocardless_customer_id = redirect_flow.links.customer
+
+        request.user.save()
+
+    except gocardless_pro.errors.InvalidStateError as e:
+        messages.error(request, "Invalid State: " + str(e), extra_tags='alert-danger')
+
+    except Exception as e:
+        print(repr(e))
+
+        messages.error(request, "Exception: " + str(e), extra_tags='alert-danger')
+
+
+    return render(request, 'main/supporter_step3.html')
 
 
 class Login(View):
@@ -211,7 +248,7 @@ class Login(View):
             login(request, user)
             return redirect('/home')
         else:
-            messages.error(request, "Invalid username or password")
+            messages.error(request, "Invalid username or password", extra_tags='alert-danger')
             return render(request, 'main/login.html')
 
 
