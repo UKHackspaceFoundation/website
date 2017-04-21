@@ -87,7 +87,7 @@
                     <div class="alert alert-warning no-margin" style="margin-top:15px">
                         Note: We have emailed the primary contact for {{ user.space.name }} to verify your association with them.  Once this is approved, you will be able to maintain the {{ user.space.name }} profile information and apply for foundation membership.
                     </div>
-                    {% else %}
+                    {% elif user.space_status == 'Rejected' %}
                     <div class="alert alert-danger no-margin" style="margin-top:15px">
                         Your association with {{ user.space.name }} has been <b>rejected</b> by the primary contact for the space.  Please contact them directly to discuss the situation further: <a href="{{ user.space_approver }}">{{ user.space_approver }}</a>
                     </div>

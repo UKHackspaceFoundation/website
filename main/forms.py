@@ -7,6 +7,7 @@ from django.template.loader import get_template
 from django.template import Context
 from django.conf import settings
 import uuid
+from django.urls import reverse
 
 class CustomUserCreationForm(ModelForm):
     class Meta(UserCreationForm.Meta):
@@ -14,6 +15,7 @@ class CustomUserCreationForm(ModelForm):
         fields = ('email','first_name','last_name','space',)
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
         super(CustomUserCreationForm, self).__init__(*args, **kwargs)
         # override User model to ensure first and last names are required
         self.fields['first_name'].required = True
@@ -50,8 +52,8 @@ class CustomUserCreationForm(ModelForm):
                 'first_name': user.first_name,
                 'last_name': user.last_name,
                 'hackspace': user.space.name,
-                'key': user.space_request_key,
-                'domain': getattr(settings, "DOMAIN", None),
+                'approve_url': self.request.build_absolute_uri(reverse('space-approval', kwargs={'key': user.space_request_key, 'action':'approve'} )),
+                'reject_url': self.request.build_absolute_uri(reverse('space-approval', kwargs={'key': user.space_request_key, 'action':'reject'} ))
             })
 
             subject = "Is " + user.first_name +" " + user.last_name + " a member of " + user.space.name + "?"
