@@ -50,6 +50,16 @@
                         {% if user.member_status == "Pending" %}
                             <p>Your application is pending review by the Board - we'll email you once they have made a decision</p>
 
+                        {% elif user.member_status == 'Rejected' %}
+                            <p>Unfortunately, your application has been <b>rejected</b> by the Board - you should have received an email explaining the reason(s) for their decision.</p>
+
+                        {% elif user.member_status == 'Approved' %}
+                            <dl class="dl-horizontal no-margin">
+                                <dt>Membership Status</dt> <dd>Approved</dd>
+                                <dt>Subscription Fee</dt> <dd>&pound;{{ user.member_fee }}</dd>
+                                <dt>Customer ID</dt> <dd>{{ user.gocardless_customer_id }}</dd>
+                                <dt>Mandate ID</dt> <dd>{{ user.gocardless_mandate_id }}</dd>
+                            </dl>
                         {% endif %}
 
                     {% endif %}

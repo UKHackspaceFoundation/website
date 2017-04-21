@@ -182,6 +182,10 @@ def join_supporter_step2(request):
     # generate a new session_token
     request.user.gocardless_session_token = uuid.uuid4().hex
 
+    # reset the member type and status  (in case of previous rejection)
+    request.user.member_type = 'None'
+    request.user.member_status = 'Blank'
+
     # create a redirect_flow, pre-fill the users name and email
     redirect_flow = client.redirect_flows.create(
         params={
@@ -282,20 +286,107 @@ def supporter_approval(request, session_token, action):
 
     try:
         # lookup user info based on key
-        user = User.objects.get(session_token=session_token)
+        user = User.objects.get(gocardless_session_token=session_token)
+
+        # check user has not already been approved/rejected (e.g. by someone else!)
+        if user.member_status != 'Pending':
+            messages.error(request, "Error - "+ user.first_name+" appears to have already been " + user.member_status, extra_tags='alert-danger')
+            return render(request, 'base.html')
+
 
         # update user object
         user.member_status = 'Approved' if action=='approve' else 'Rejected'
 
         user.save()
 
-        # email user to notify of approval
-        
+        # email user to notify of decision
+        htmly = get_template('main/supporter_decision_email.html')
+
+        d = Context({
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'fee': user.member_fee,
+            'action': action
+        })
+
+        subject = "Hackspace Foundation Membership Application"
+        from_email = getattr(settings, "BOARD_EMAIL", None)
+        to = user.email
+        message = htmly.render(d)
+        try:
+            msg = EmailMessage(subject, message, to=[to], from_email=from_email)
+            msg.content_subtype = 'html'
+            msg.send()
+        except Exception as e:
+            # TODO: oh dear - how should we handle this gracefully?!?
+            print("Error sending email" + str(e))
+
+
+        # get gocardless client object
+        client = gocardless_pro.Client(
+            access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
+            environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
+        )
+
+        # if approved, request gocardless payment
+        if action == 'approve':
+
+
+            # create a payment object in the database
+            # TODO:
+
+            try:
+                # create payment
+                payment = client.payments.create(
+                    params={
+                        "amount" : int(user.member_fee * 100), # convert to pence
+                        "currency" : "GBP",
+                        "links" : {
+                            "mandate": user.gocardless_mandate_id
+                        },
+                        "metadata": {
+                            "type":"SupporterSubscription"
+                            # TODO: decide if we want to add metadata to the payment
+                        }
+                    }, headers={
+                        'Idempotency-Key' : 'random_key',
+                })
+
+                # Keep hold of this payment ID - we will use it in a minute
+                # It should look like "PM000260X9VKF4"
+                print("Payment ID: {}".format(payment.id))
+
+            except Exception as e:
+                print(repr(e))
+
+
+
+        # if rejected, then cancel mandate
+        else:
+
+            try:
+                # cancel mandate
+                mandate = client.mandates.cancel(user.gocardless_mandate_id)
+
+
+                # reset gocardless info on user object
+                user.gocardless_mandate_id = '';
+                user.gocardless_customer_id = '';
+                user.gocardless_redirect_flow_id = '';
+
+                user.save()
+
+
+            except Exception as e:
+                print(repr(e))
+
 
         # make a context object for the template to render
         context = {
             'first_name': user.first_name,
             'last_name': user.last_name,
+            'email':user.email,
             'action': ('approving' if action=='approve' else 'rejecting')
         }
         return render(request, 'main/supporter_approval.html', context)
