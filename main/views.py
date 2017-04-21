@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.generic.edit import CreateView
 from .models import Space
-from .forms import CustomUserCreationForm
+from .forms import CustomUserCreationForm, SupporterMemberForm
 from django.contrib.auth.forms import PasswordResetForm
 import requests
 import markdown
@@ -19,6 +19,7 @@ from django.conf import settings
 from django.views.generic.edit import UpdateView
 from django.urls import reverse_lazy, reverse
 import gocardless_pro
+import uuid
 
 
 def index(request):
@@ -156,9 +157,14 @@ def join(request):
     return render(request, 'main/join.html')
 
 
-@login_required
-def join_supporter_step1(request):
-    return render(request, 'main/supporter_step1.html')
+class join_supporter_step1(UpdateView):
+    model = User
+    success_url = reverse_lazy('join_supporter_step2')
+    form_class = SupporterMemberForm
+    template_name = 'main/supporter_step1.html'
+
+    def get_object(self, queryset=None):
+        return self.request.user
 
 
 @login_required
@@ -168,6 +174,9 @@ def join_supporter_step2(request):
         access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
         environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
     )
+
+    # generate a new session_token
+    request.user.gocardless_session_token = uuid.uuid4().hex
 
     # create a redirect_flow, pre-fill the users name and email
     redirect_flow = client.redirect_flows.create(
@@ -185,10 +194,6 @@ def join_supporter_step2(request):
 
     # store the redirect id
     request.user.gocardless_redirect_flow_id = redirect_flow.id
-
-    # update the type and status
-    request.user.member_type = 'Supporter'
-    request.user.member_status = 'Pending'
 
     # commit changes to database
     request.user.save()
@@ -218,11 +223,18 @@ def join_supporter_step3(request, session_token):
             }
         )
 
+        # update the member type and status
+        request.user.member_type = 'Supporter'
+        request.user.member_status = 'Pending'
+
         # save customer and mandate IDs
         request.user.gocardless_mandate_id = redirect_flow.links.mandate
         request.user.gocardless_customer_id = redirect_flow.links.customer
 
         request.user.save()
+
+        # Notify admin of pending application
+        # TODO: 
 
     except gocardless_pro.errors.InvalidStateError as e:
         messages.error(request, "Invalid State: " + str(e), extra_tags='alert-danger')

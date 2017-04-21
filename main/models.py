@@ -30,6 +30,10 @@ class User(AbstractUser):
     member_type = models.CharField(max_length=14, choices=MEMBER_TYPE_CHOICES, default='None')
     # member application status
     member_status = models.CharField(max_length=8, choices=APPROVAL_STATUS_CHOICES, default='Blank')
+    # member subscription fee (chosen by user)
+    member_fee = models.DecimalField(max_digits=8, decimal_places=2, default=10.00)
+    # application statement - aka: why i should be a member statement
+    member_statement = models.TextField(blank=True)
 
     # relationship to users selected space
     space = models.ForeignKey('Space', models.SET_NULL, blank=True, null=True)
@@ -44,7 +48,7 @@ class User(AbstractUser):
 
     # gocardless redirect flow id
     gocardless_redirect_flow_id = models.CharField(max_length=33, blank=True)
-    gocardless_session_token = models.CharField(max_length=33, default=uuid.uuid4().hex)
+    gocardless_session_token = models.CharField(max_length=33, default='')
     gocardless_mandate_id = models.CharField(max_length=16, blank=True)
     gocardless_customer_id = models.CharField(max_length=16, blank=True)
 

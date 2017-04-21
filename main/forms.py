@@ -7,6 +7,7 @@ from django.template.loader import get_template
 from django.template import Context
 from django.conf import settings
 import uuid
+from django import forms
 
 class CustomUserCreationForm(ModelForm):
     class Meta(UserCreationForm.Meta):
@@ -68,3 +69,23 @@ class CustomUserCreationForm(ModelForm):
 
         # commit changes to the DB
         return super(CustomUserCreationForm, self).save(commit)
+
+
+class SupporterMemberForm(ModelForm):
+    class Meta:
+        model = User
+        fields = ('member_fee','member_statement')
+
+    # ensure member_fee is not less than £10.00
+    def clean_member_fee(self):
+        data = self.cleaned_data['member_fee']
+        if data < 10:
+            raise forms.ValidationError("Minimum £10.00")
+        return data
+
+    # ensure member_statement is not empty
+    def clean_member_statement(self):
+        data = self.cleaned_data['member_statement']
+        if data == "":
+            raise forms.ValidationError("Please write at least a few words :)")
+        return data
