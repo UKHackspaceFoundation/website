@@ -46,6 +46,13 @@ class UserUpdate(LoginRequiredMixin, UpdateView):
     success_url = '/profile'
     form_class = CustomUserCreationForm
 
+    # make request object available to form
+    def get_form_kwargs(self):
+        kw = super(UserUpdate, self).get_form_kwargs()
+        kw['request'] = self.request
+        return kw
+
+    # ensure the logged in user object is passed to the view/form
     def get_object(self, queryset=None):
         return self.request.user
 
@@ -193,6 +200,12 @@ class SignupView(CreateView):
     model = User
     template_name = 'main/signup.html'
 
+    # make request object available to form
+    def get_form_kwargs(self):
+        kw = super(UserUpdate, self).get_form_kwargs()
+        kw['request'] = self.request
+        return kw
+
     def form_valid(self, form):
         obj = form.save(commit=False)
         obj.set_password(User.objects.make_random_password())
@@ -228,12 +241,9 @@ def space_approval(request, key, action):
         # this shouldn't happen - just redirect to home
         return redirect('/')
 
-    # lookup user info based on key
-    users = User.objects.filter(space_request_key=key)
-
-    # should only get one object back
-    if users.count() == 1:
-        user = users[0]
+    try:
+        # lookup user info based on key
+        user = User.objects.get(space_request_key=key)
 
         # update user object
         user.space_status = 'Approved' if action=='approve' else 'Rejected'
@@ -249,7 +259,7 @@ def space_approval(request, key, action):
         }
         return render(request, 'main/space_approval.html', context)
 
-    else:
+    except User.DoesNotExist as e:
         # aargh - that's not right - redirect to home
         return redirect('/')
 
