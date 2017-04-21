@@ -54,12 +54,30 @@
                             <p>Unfortunately, your application has been <b>rejected</b> by the Board - you should have received an email explaining the reason(s) for their decision.</p>
 
                         {% elif user.member_status == 'Approved' %}
-                            <dl class="dl-horizontal no-margin">
+                            <dl class="dl-horizontal">
                                 <dt>Membership Status</dt> <dd>Approved</dd>
                                 <dt>Subscription Fee</dt> <dd>&pound;{{ user.member_fee }}</dd>
                                 <dt>Customer ID</dt> <dd>{{ user.gocardless_customer_id }}</dd>
                                 <dt>Mandate ID</dt> <dd>{{ user.gocardless_mandate_id }}</dd>
                             </dl>
+
+                            <h4>Payments</h4>
+                            <table class="table table-condensed no-margin">
+                                <thead>
+                                    <tr style="background-color: #eee">
+                                        <th>Amount</th> <th>Charge Date</th> <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for payment in payments %}
+                                    <tr>
+                                        <td>&pound;{% widthratio payment.amount 100 1 %}</td>
+                                        <td>{{ payment.charge_date }}</td>
+                                        <td>{{ payment.status }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         {% endif %}
 
                     {% endif %}

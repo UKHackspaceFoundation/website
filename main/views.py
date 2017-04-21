@@ -44,10 +44,27 @@ def index(request):
 # homepage for registered users
 @login_required
 def home(request):
-    associated_users = User.objects.filter(space=request.user.space)
+    associated_users = User.objects.filter(space=request.user.space, space_status='Approved')
+    payments = None
+
+    if request.user.member_status == 'Approved' and request.user.member_type == 'Supporter':
+        # get gocardless client object
+        client = gocardless_pro.Client(
+            access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
+            environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
+        )
+
+        # fetch associated gocardless payments
+        try:
+            payments = client.payments.list(params={"customer": request.user.gocardless_customer_id}).records
+
+        except Exception as e:
+            logger.error("Error in home - exception retrieving payments: " + repr(e), extra=request.user)
+
     return render(request, 'main/home.html', {
         'MAPBOX_ACCESS_TOKEN': getattr(settings, "MAPBOX_ACCESS_TOKEN", None),
-        'associated_users': associated_users
+        'associated_users': associated_users,
+        'payments': payments
     })
 
 
