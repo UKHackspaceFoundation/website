@@ -21,6 +21,13 @@ h2 {
 
 dd {
     margin-left: 15px;
+    font-size:15px;
+    line-height:1.5;
+}
+
+dt {
+    font-size:15px;
+    line-height:1.5;
 }
 
 .no-margin {
