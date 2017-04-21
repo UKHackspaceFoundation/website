@@ -24,6 +24,11 @@ import uuid
 from django.core.mail import EmailMessage
 from django.template.loader import get_template
 from django.template import Context
+import logging
+
+
+# get instance of a logger
+logger = logging.getLogger(__name__)
 
 
 def index(request):
@@ -206,15 +211,15 @@ def join_supporter_step2(request):
     # commit changes to database
     request.user.save()
 
-    print(redirect_flow.redirect_url)
-
     return redirect(redirect_flow.redirect_url)
+
 
 @login_required
 def join_supporter_step3(request, session_token):
 
     if session_token != request.user.gocardless_session_token:
         messages.error(request, 'Something went wrong, please restart your application', extra_tags='alert-danger')
+        logger.error("Error in join_supporter_step3 - session tokens don't match", extra=request.user)
         return redirect(reverse('join_supporter_step1'))
 
     # get gocardless client object
@@ -264,16 +269,15 @@ def join_supporter_step3(request, session_token):
             msg.send()
         except Exception as e:
             # TODO: oh dear - how should we handle this gracefully?!?
-            print("Error sending email" + str(e))
+            logger.error("Error in join_supporter_step3 - failed to send email: "+str(e), extra=request.user)
 
     except gocardless_pro.errors.InvalidStateError as e:
         messages.error(request, "Invalid State: " + str(e), extra_tags='alert-danger')
+        logger.error("Error in join_supporter_step3 - invalid gocardless state: "+str(e), extra=request.user)
 
     except Exception as e:
-        print(repr(e))
-
         messages.error(request, "Exception: " + str(e), extra_tags='alert-danger')
-
+        logger.error("Error in join_supporter_step3 - error in mandate creation: "+repr(e), extra=request.user)
 
     return render(request, 'main/supporter_step3.html')
 
@@ -282,6 +286,7 @@ def supporter_approval(request, session_token, action):
 
     if action != 'approve' and action != 'reject':
         # this shouldn't happen - just redirect to home
+        logger.error("Error in supporter_approval - unexpected action: "+action, extra=request.user)
         return redirect('/')
 
     try:
@@ -320,7 +325,7 @@ def supporter_approval(request, session_token, action):
             msg.send()
         except Exception as e:
             # TODO: oh dear - how should we handle this gracefully?!?
-            print("Error sending email" + str(e))
+            logger.error("Error in supporter_approval - unable to send email: "+str(e), extra=request.user)
 
 
         # get gocardless client object
@@ -356,9 +361,10 @@ def supporter_approval(request, session_token, action):
                 # Keep hold of this payment ID - we will use it in a minute
                 # It should look like "PM000260X9VKF4"
                 print("Payment ID: {}".format(payment.id))
+                print(payment.__dict__)
 
             except Exception as e:
-                print(repr(e))
+                logger.error("Error in supporter_approval - exception creating payment: "+repr(e), extra=request.user)
 
 
 
@@ -379,7 +385,7 @@ def supporter_approval(request, session_token, action):
 
 
             except Exception as e:
-                print(repr(e))
+                logger.error("Error in supporter_approval - exception cancelling mandate: "+repr(e), extra=request.user)
 
 
         # make a context object for the template to render
@@ -393,6 +399,7 @@ def supporter_approval(request, session_token, action):
 
     except User.DoesNotExist as e:
         # aargh - that's not right - redirect to home
+        logger.error("Error in supporter_approval - user does not exist: "+str(e), extra=request.user)
         return redirect('/')
 
 
@@ -410,6 +417,7 @@ class Login(View):
             return redirect('/home')
         else:
             messages.error(request, "Invalid username or password", extra_tags='alert-danger')
+            logger.error("Error in Login - invalid username or password: "+username)
             return render(request, 'main/login.html')
 
 
@@ -448,6 +456,7 @@ class SignupView(CreateView):
             # best to delete partially formed user object so we don't leave useless entries in the database
             obj.delete()
             messages.error(self.request, "Error emailing verification link: " + str(e), extra_tags='alert-danger')
+            logger.error("Error in SignupView - unable to send password reset email: "+str(e))
 
             return redirect('signup')
 

@@ -8,6 +8,10 @@ from django.template import Context
 from django.conf import settings
 import uuid
 from django import forms
+import logging
+
+# get instance of a logger
+logger = logging.getLogger(__name__)
 
 class CustomUserCreationForm(ModelForm):
     class Meta(UserCreationForm.Meta):
@@ -64,7 +68,7 @@ class CustomUserCreationForm(ModelForm):
                 msg.send()
             except Exception as e:
                 # TODO: oh dear - how should we handle this gracefully?!?
-                print("Error sending email" + str(e))
+                logger.error("Error sending space approval email: " + str(e))
 
 
         # commit changes to the DB
