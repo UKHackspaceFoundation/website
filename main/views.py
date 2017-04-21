@@ -19,6 +19,7 @@ from dealer.git import git
 from django.conf import settings
 from django.views.generic.edit import UpdateView
 from django.urls import reverse_lazy
+from django import forms
 
 
 def index(request):
@@ -193,7 +194,24 @@ def logout_view(request):
     logout(request)
     return redirect('/')
 
+  
+class CustomUserCreationForm(UserCreationForm):
 
+    # insert a field to indicate approval to Code of Conduct, defaults to false
+    agree_to_coc = forms.BooleanField()
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = ('email','first_name','last_name','space','agree_to_coc')
+
+    # Add validation to ensure agreement to code of conduct
+    def clear_agree_to_coc(self):
+        data = self.cleaned_data['agree_to_coc']
+        if not data:
+            raise forms.ValidationError("You must agree to the Code of Conduct to register")
+        return data
+
+      
 class SignupView(CreateView):
     form_class = CustomUserCreationForm
     model = User
