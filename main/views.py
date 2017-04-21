@@ -17,7 +17,8 @@ from main.models import User
 from dealer.git import git
 from django.conf import settings
 from django.views.generic.edit import UpdateView
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
+import gocardless_pro
 
 
 def index(request):
@@ -150,12 +151,52 @@ def starting(request):
     return render(request, 'main/starting.html')
 
 
+@login_required
 def join(request):
     return render(request, 'main/join.html')
 
 
-def join_supporter(request):
-    return render(request, 'main/supporter.html')
+@login_required
+def join_supporter_step1(request):
+    return render(request, 'main/supporter_step1.html')
+
+
+@login_required
+def join_supporter_step2(request):
+    # get gocardless client object
+    client = gocardless_pro.Client(
+        access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
+        environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
+    )
+
+    # create a redirect_flow, pre-fill the users name and email
+    redirect_flow = client.redirect_flows.create(
+        params={
+            "description" : "Hackspace Foundation Individual Membership",
+            "session_token" : request.user.gocardless_session_token,
+            "success_redirect_url" : request.build_absolute_uri(reverse('join_supporter_step3', kwargs={'session_token':request.user.gocardless_session_token} )),
+            "prefilled_customer": {
+                "given_name": request.user.first_name,
+                "family_name": request.user.last_name,
+                "email": request.user.email
+            }
+        }
+    )
+
+    # store the redirect id
+    request.user.gocardless_redirect_flow_id = redirect_flow.id
+    request.user.save()
+
+    print(redirect_flow.redirect_url)
+
+    return redirect(redirect_flow.redirect_url)
+
+@login_required
+def join_supporter_step3(request, session_token):
+
+    print(session_token)
+
+    return render(request, 'base.html')
 
 
 class Login(View):

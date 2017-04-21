@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
+import uuid
 
 class User(AbstractUser):
 
@@ -16,6 +17,8 @@ class User(AbstractUser):
     username = None
     # add email, make it the unique field
     email = models.EmailField(_('email address'), unique=True)
+    # override default
+    USERNAME_FIELD = 'email'
     # relationship to users selected space
     space = models.ForeignKey('Space', models.SET_NULL, blank=True, null=True)
     # status of space relationship:
@@ -26,8 +29,11 @@ class User(AbstractUser):
     space_request_date = models.DateTimeField(default=timezone.now)
     # random hash to verify source of approve/reject responses
     space_request_key = models.CharField(max_length=32, blank=True)
-    # override default
-    USERNAME_FIELD = 'email'
+
+    # gocardless redirect flow id
+    gocardless_redirect_flow_id = models.CharField(max_length=33, blank=True)
+    gocardless_session_token = models.CharField(max_length=33, default=uuid.uuid4().hex)
+
     # disable default required fields
     REQUIRED_FIELDS = []
 

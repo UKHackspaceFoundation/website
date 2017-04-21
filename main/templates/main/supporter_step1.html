@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Supporter Membership{% endblock %}
+
+{% block content %}
+
+<div class="col-md-8">
+    <h2>Join as a Supporter Member</h2>
+
+    <p>Supporter membership of the Hackspace Foundation is available for individuals who
+       have significant experience running hackspaces and an interest in helping the
+       Foundation.</p>
+
+    <p>Supporter members are full, voting members of the Foundation, however the voting power of all
+       supporter members is capped at 20%, with 80% of voting power with Member Spaces.</p>
+
+    <p>The membership fee for a Supporter Member is pay-what-you-want, with a minimum of £10 per year, collected by Direct Debit (via GoCardless). Admission as a
+       supporter member is at the discretion of the Board.</p>
+
+    <p>You can read more about the Hackspace Foundation <a href="/foundation/structure.md">organisational structure here.</a></p>
+
+    <a href="{% url 'join_supporter_step2' %}" class="btn btn-success">Continue with Application</a>
+</div>
+
+{% endblock %}
