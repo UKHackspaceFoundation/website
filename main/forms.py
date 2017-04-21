@@ -26,47 +26,55 @@ class CustomUserCreationForm(ModelForm):
             # get a reference to the user object
             user = super(CustomUserCreationForm, self).save(False)
 
-            # reset space approval status
-            user.space_status = 'Pending'
+            # see if user has selected None
+            if user.space == None:
+                # reset space status
+                user.space_status = 'Blank'
 
-            # populate the approver email address
-            # TODO: Use Representative(s) email if available
-            # If space has a contact email address, then use that:
-            if user.space.email != "":
-                user.space_approver = user.space.email
+
             else:
-                # otherwise use the default contact address for the site
-                user.space_approver = getattr(settings, "DEFAULT_FROM_EMAIL", None)
 
-            # note the date
-            user.space_request_date = timezone.now()
+                # reset space approval status
+                user.space_status = 'Pending'
 
-            # generate a unique key for this request
-            user.space_request_key = uuid.uuid4().hex
+                # populate the approver email address
+                # TODO: Use Representative(s) email if available
+                # If space has a contact email address, then use that:
+                if user.space.email != "":
+                    user.space_approver = user.space.email
+                else:
+                    # otherwise use the default contact address for the site
+                    user.space_approver = getattr(settings, "DEFAULT_FROM_EMAIL", None)
 
-            # send approval request email
-            htmly = get_template('main/space_approval_email.html')
+                # note the date
+                user.space_request_date = timezone.now()
 
-            d = Context({
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'hackspace': user.space.name,
-                'approve_url': self.request.build_absolute_uri(reverse('space-approval', kwargs={'key': user.space_request_key, 'action':'approve'} )),
-                'reject_url': self.request.build_absolute_uri(reverse('space-approval', kwargs={'key': user.space_request_key, 'action':'reject'} ))
-            })
+                # generate a unique key for this request
+                user.space_request_key = uuid.uuid4().hex
 
-            subject = "Is " + user.first_name +" " + user.last_name + " a member of " + user.space.name + "?"
-            from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
-            to = user.space_approver
-            message = htmly.render(d)
-            try:
-                msg = EmailMessage(subject, message, to=[to], from_email=from_email)
-                msg.content_subtype = 'html'
-                msg.send()
-            except Exception as e:
-                # TODO: oh dear - how should we handle this gracefully?!?
-                print("Error sending email" + str(e))
+                # send approval request email
+                htmly = get_template('main/space_approval_email.html')
+
+                d = Context({
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'hackspace': user.space.name,
+                    'approve_url': self.request.build_absolute_uri(reverse('space-approval', kwargs={'key': user.space_request_key, 'action':'approve'} )),
+                    'reject_url': self.request.build_absolute_uri(reverse('space-approval', kwargs={'key': user.space_request_key, 'action':'reject'} ))
+                })
+
+                subject = "Is " + user.first_name +" " + user.last_name + " a member of " + user.space.name + "?"
+                from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
+                to = user.space_approver
+                message = htmly.render(d)
+                try:
+                    msg = EmailMessage(subject, message, to=[to], from_email=from_email)
+                    msg.content_subtype = 'html'
+                    msg.send()
+                except Exception as e:
+                    # TODO: oh dear - how should we handle this gracefully?!?
+                    print("Error sending email" + str(e))
 
 
         # commit changes to the DB
