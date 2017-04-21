@@ -10,6 +10,7 @@ from django.views.generic.edit import CreateView
 from .models import Space
 from .forms import CustomUserCreationForm, SupporterMemberForm
 from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.mixins import LoginRequiredMixin
 import requests
 import markdown
 from urllib.parse import urljoin
@@ -20,6 +21,9 @@ from django.views.generic.edit import UpdateView
 from django.urls import reverse_lazy, reverse
 import gocardless_pro
 import uuid
+from django.core.mail import EmailMessage
+from django.template.loader import get_template
+from django.template import Context
 
 
 def index(request):
@@ -157,7 +161,7 @@ def join(request):
     return render(request, 'main/join.html')
 
 
-class join_supporter_step1(UpdateView):
+class join_supporter_step1(LoginRequiredMixin, UpdateView):
     model = User
     success_url = reverse_lazy('join_supporter_step2')
     form_class = SupporterMemberForm
@@ -234,7 +238,29 @@ def join_supporter_step3(request, session_token):
         request.user.save()
 
         # Notify admin of pending application
-        # TODO: 
+        htmly = get_template('main/supporter_application_email.html')
+
+        d = Context({
+            'email': request.user.email,
+            'first_name': request.user.first_name,
+            'last_name': request.user.last_name,
+            'note': request.user.member_statement,
+            'fee': request.user.member_fee,
+            'approve_url': request.build_absolute_uri(reverse('supporter-approval', kwargs={'session_token':request.user.gocardless_session_token, 'action':'approve'} )),
+            'reject_url': request.build_absolute_uri(reverse('supporter-approval', kwargs={'session_token':request.user.gocardless_session_token, 'action':'reject'} ))
+        })
+
+        subject = "Supporter Member Application from " + request.user.first_name +" " + request.user.last_name
+        from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
+        to = getattr(settings, "BOARD_EMAIL", None)
+        message = htmly.render(d)
+        try:
+            msg = EmailMessage(subject, message, to=[to], from_email=from_email)
+            msg.content_subtype = 'html'
+            msg.send()
+        except Exception as e:
+            # TODO: oh dear - how should we handle this gracefully?!?
+            print("Error sending email" + str(e))
 
     except gocardless_pro.errors.InvalidStateError as e:
         messages.error(request, "Invalid State: " + str(e), extra_tags='alert-danger')
@@ -246,6 +272,38 @@ def join_supporter_step3(request, session_token):
 
 
     return render(request, 'main/supporter_step3.html')
+
+
+def supporter_approval(request, session_token, action):
+
+    if action != 'approve' and action != 'reject':
+        # this shouldn't happen - just redirect to home
+        return redirect('/')
+
+    try:
+        # lookup user info based on key
+        user = User.objects.get(session_token=session_token)
+
+        # update user object
+        user.member_status = 'Approved' if action=='approve' else 'Rejected'
+
+        user.save()
+
+        # email user to notify of approval
+        
+
+        # make a context object for the template to render
+        context = {
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'action': ('approving' if action=='approve' else 'rejecting')
+        }
+        return render(request, 'main/supporter_approval.html', context)
+
+    except User.DoesNotExist as e:
+        # aargh - that's not right - redirect to home
+        return redirect('/')
+
 
 
 class Login(View):

@@ -15,6 +15,7 @@ urlpatterns = [
     url(r'^join/supporter/1$', views.join_supporter_step1.as_view(), name='join_supporter_step1'),
     url(r'^join/supporter/2$', views.join_supporter_step2, name='join_supporter_step2'),
     url(r'^join/supporter/3/(?P<session_token>[0-9A-Za-z_\-]+)$', views.join_supporter_step3, name='join_supporter_step3'),
+    url(r'^supporter-approval/(?P<session_token>.*)/(?P<action>.*)$', views.supporter_approval, name='supporter-approval'),
     url(r'^login$', views.Login.as_view(), name='login'),
     url(r'^logout$', views.logout_view, name='logout'),
     url(r'^resources/(?P<path>.*)$', views.resources, name='resources'),
