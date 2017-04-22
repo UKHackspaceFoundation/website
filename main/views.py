@@ -181,7 +181,7 @@ class SignupView(CreateView):
 
     # make request object available to form
     def get_form_kwargs(self):
-        kw = super(UserUpdate, self).get_form_kwargs()
+        kw = super(SignupView, self).get_form_kwargs()
         kw['request'] = self.request
         return kw
 
