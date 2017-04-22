@@ -30,7 +30,7 @@ class CustomUserCreationForm(ModelForm):
         self.fields['first_name'].required = True
         self.fields['last_name'].required = True
         # check if user is active, if active, then disable the coc field
-        if self.request.user.active:
+        if hasattr(self.request.user, 'active') and self.request.user.active:
             del self.fields['agree_to_coc']
 
     # Add validation to ensure agreement to code of conduct
