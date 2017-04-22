@@ -93,7 +93,7 @@ def gitinfo(request):
 
 # return space info as geojson
 def geojson(request):
-    geo = Spaces.objects.as_geojson()
+    geo = Space.objects.as_geojson()
     return JsonResponse(geo)
 
 

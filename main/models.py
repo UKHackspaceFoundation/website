@@ -48,7 +48,7 @@ class SpaceManager(models.Manager):
         return super(SpaceManager, self).get_queryset().values('name', 'lat', 'lng', 'main_website_url', 'logo_image_url', 'status')
 
     def as_geojson(self):
-        results = self.json_values()
+        results = self.all()
         geo = {
             "type": "FeatureCollection",
             "features": []
