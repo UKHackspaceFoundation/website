@@ -168,11 +168,6 @@ def import_spaces(request):
     return redirect(reverse_lazy('space_detail'))
 
 
-
-def starting(request):
-    return render(request, 'main/starting.html')
-
-
 @login_required
 def join(request):
     return render(request, 'join/join.html')
