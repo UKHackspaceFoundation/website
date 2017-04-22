@@ -8,6 +8,12 @@ from django.template import Context
 from django.conf import settings
 import uuid
 from django.urls import reverse
+from django import forms
+import logging
+
+# get instance of a logger
+logger = logging.getLogger(__name__)
+
 
 class CustomUserCreationForm(ModelForm):
     class Meta(UserCreationForm.Meta):
@@ -66,8 +72,28 @@ class CustomUserCreationForm(ModelForm):
                 msg.send()
             except Exception as e:
                 # TODO: oh dear - how should we handle this gracefully?!?
-                print("Error sending email" + str(e))
+                logger.error("Error sending space approval email: " + str(e))
 
 
         # commit changes to the DB
         return super(CustomUserCreationForm, self).save(commit)
+
+
+class SupporterMemberForm(ModelForm):
+    class Meta:
+        model = User
+        fields = ('member_fee','member_statement')
+
+    # ensure member_fee is not less than £10.00
+    def clean_member_fee(self):
+        data = self.cleaned_data['member_fee']
+        if data < 10:
+            raise forms.ValidationError("Minimum £10.00")
+        return data
+
+    # ensure member_statement is not empty
+    def clean_member_statement(self):
+        data = self.cleaned_data['member_statement']
+        if data == "":
+            raise forms.ValidationError("Please write at least a few words :)")
+        return data

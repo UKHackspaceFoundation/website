@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Supporter Membership{% endblock %}
+
+{% block content %}
+
+<div class="col-md-8">
+    <h2>Application Complete</h2>
+
+    <p>Thankyou for your application - it will now be reviewed by the Board and you should have a response within a week or so.</p>
+
+    <p>Your Direct Debit mandate is also setup, but we won't collect your subscription fee until your membership is approved.</p>
+
+    <a href="{% url 'home' %}" class="btn btn-success">Back to Home</a>
+
+</div>
+
+{% endblock %}
