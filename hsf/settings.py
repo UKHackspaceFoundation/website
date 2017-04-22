@@ -28,9 +28,18 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 # Other secret stuff (development values in git repo)
+
+# MAPBOX
 MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoiYXhmb3JkIiwiYSI6ImNqMWMwYXI5MDAwNG8zMm5uanFyeThmZDEifQ.paAXk3S29-VVw1bhk458Iw'
+
+# TELEGRAM
 TELEGRAM_BOT_TOKEN = '360648398:AAG-vPZv-0GwPkqRkIs3sVogfM4M3wKxkFg'
 TELEGRAM_BOT_CHAT_ID = -150366976
+
+# GOCARDLESS
+GOCARDLESS_ACCESS_TOKEN = ""
+GOCARDLESS_ENVIRONMENT = "sandbox"
+
 
 # Application definition
 
@@ -110,6 +119,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 AUTH_USER_MODEL = 'main.User'
 
+LOGIN_URL = '/login'
+
 # Internationalization
 # https://docs.djangoproject.com/en/1.10/topics/i18n/
 
@@ -139,6 +150,7 @@ STATICFILES_DIRS = [
 EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
 DEFAULT_FROM_EMAIL = "contact@hackspace.org.uk"
+BOARD_EMAIL = "contact@hackspace.org.uk"
 
 # Domain - used for generating hyperlinks in templates
 DOMAIN = "www.hackspace.org.uk"
