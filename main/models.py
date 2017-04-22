@@ -1,8 +1,42 @@
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import (AbstractUser,BaseUserManager)
 from django.utils.translation import gettext_lazy as _
 import uuid
+
+
+class SpaceUserManager(BaseUserManager):
+    def create_user(self, email, password=None, space=None):
+        """
+        Creates and saves a User with the given email, space
+        and password.
+        """
+        if not email:
+            raise ValueError('Users must have an email address')
+
+        user = self.model(
+            email=self.normalize_email(email),
+            space=space,
+        )
+
+        if password:
+            user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password):
+        """
+        Creates and saves a superuser with the given email
+        and password.
+        """
+        user = self.create_user(
+            email,
+            password=password,
+        )
+        user.is_admin = True
+        user.is_staff = True
+        user.save(using=self._db)
+        return user
 
 class User(AbstractUser):
 
@@ -25,6 +59,9 @@ class User(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
     # override default
     USERNAME_FIELD = 'email'
+
+    # whether user account is active (i.e. password has been reset after initial signup)
+    active = models.BooleanField(default=False)
 
     # what type of member is this?
     member_type = models.CharField(max_length=14, choices=MEMBER_TYPE_CHOICES, default='None')
@@ -55,10 +92,36 @@ class User(AbstractUser):
     # disable default required fields
     REQUIRED_FIELDS = []
 
+    objects = SpaceUserManager();
+
     class Meta:
         # set default ordering to be on first_name
         ordering = ["first_name"]
 
+
+
+class SpaceManager(models.Manager):
+    def active_spaces(self):
+        return super(SpaceManager, self).get_queryset().filter(status="Active") | super(SpaceManager, self).get_queryset().filter(status="Starting")
+
+    def inactive_spaces(self):
+        return super(SpaceManager, self).get_queryset().filter(status="Defunct") | super(SpaceManager, self).get_queryset().filter(status="Suspended")
+
+    def as_json(self):
+        return {'spaces': list(
+            super(SpaceManager, self).get_queryset().values('name', 'lat', 'lng', 'main_website_url', 'logo_image_url', 'status')
+        )}
+
+    def as_geojson(self):
+        results = self.all()
+        geo = {
+            "type": "FeatureCollection",
+            "features": []
+        }
+        for space in results:
+            if space.valid_location():
+                geo['features'].append( space.as_geojson_feature() )
+        return geo
 
 
 class Space(models.Model):
@@ -93,6 +156,8 @@ class Space(models.Model):
     changed_date = models.DateTimeField(default=timezone.now)
     email = models.CharField(max_length=200, blank=True)
 
+    objects = SpaceManager()
+
     class Meta:
         ordering = ["name"]
 
@@ -102,3 +167,21 @@ class Space(models.Model):
 
     def __str__(self):
         return self.name
+
+    def valid_location(self):
+        return (self.lng != 0 and self.lat != 0)
+
+    def as_geojson_feature(self):
+        return {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [float(self.lng), float(self.lat)]
+            },
+            "properties": {
+                "name": self.name,
+                "url": self.main_website_url,
+                "status": self.status,
+                "logo": self.logo_image_url
+            }
+        }

@@ -19,6 +19,7 @@ from dealer.git import git
 from django.conf import settings
 from django.views.generic.edit import UpdateView
 from django.urls import reverse_lazy, reverse
+from django import forms
 import gocardless_pro
 import uuid
 from django.core.mail import EmailMessage
@@ -32,8 +33,8 @@ logger = logging.getLogger(__name__)
 
 
 def index(request):
-    activeSpaces = Space.objects.filter(status="Active") | Space.objects.filter(status="Starting")
-    inactiveSpaces = Space.objects.filter(status="Defunct") | Space.objects.filter(status="Suspended")
+    activeSpaces = Space.objects.active_spaces()
+    inactiveSpaces = Space.objects.inactive_spaces()
     return render(request, 'main/index.html', {
         'activeSpaces': activeSpaces,
         'inactiveSpaces': inactiveSpaces,
@@ -41,9 +42,9 @@ def index(request):
     })
 
 
-# homepage for registered users
+# profile page for registered users
 @login_required
-def home(request):
+def profile(request):
     associated_users = User.objects.filter(space=request.user.space, space_status='Approved')
     payments = None
 
@@ -59,9 +60,9 @@ def home(request):
             payments = client.payments.list(params={"customer": request.user.gocardless_customer_id}).records
 
         except Exception as e:
-            logger.error("Error in home - exception retrieving payments: " + repr(e), extra=request.user)
+            logger.error("Error in home - exception retrieving payments: " + repr(e), extra={'user':request.user})
 
-    return render(request, 'main/home.html', {
+    return render(request, 'main/profile.html', {
         'MAPBOX_ACCESS_TOKEN': getattr(settings, "MAPBOX_ACCESS_TOKEN", None),
         'associated_users': associated_users,
         'payments': payments
@@ -70,7 +71,7 @@ def home(request):
 
 class UserUpdate(LoginRequiredMixin, UpdateView):
     model = User
-    success_url = '/home'
+    success_url = '/profile'
     form_class = CustomUserCreationForm
 
     # make request object available to form
@@ -87,7 +88,7 @@ class UserUpdate(LoginRequiredMixin, UpdateView):
 class SpaceUpdate(LoginRequiredMixin, UpdateView):
     model = Space
     fields = ['name', 'status', 'main_website_url', 'email','have_premises', 'address_first_line', 'town', 'region', 'postcode', 'country', 'lat', 'lng', 'logo_image_url']
-    success_url = '/home'
+    success_url = '/profile'
 
     def get_object(self, queryset=None):
         return self.request.user.space
@@ -100,15 +101,14 @@ class SpaceUpdate(LoginRequiredMixin, UpdateView):
     def dispatch(self, request, *args, **kwargs):
         # make sure users have space_status='Approved'
         if self.request.user.space_status != 'Approved':
-            # otherwise redirect to home
-            return redirect('/home')
-        return super(UpdateStory, self).dispatch(request, *args, **kwargs)
+            # otherwise redirect to profile
+            return redirect(reverse_lazy('profile'))
+        return super(SpaceUpdate, self).dispatch(request, *args, **kwargs)
 
 
 # return space info as json - used for rendering map on homepage
 def spaces(request):
-    results = Space.objects.all().values('name', 'lat', 'lng', 'main_website_url', 'logo_image_url', 'status')
-    return JsonResponse({'spaces': list(results)})
+    return JsonResponse( Space.objects.as_json() )
 
 
 @login_required
@@ -121,26 +121,7 @@ def gitinfo(request):
 
 # return space info as geojson
 def geojson(request):
-    results = Space.objects.all().values('name', 'lat', 'lng', 'main_website_url', 'logo_image_url', 'status')
-    geo = {
-        "type": "FeatureCollection",
-        "features": []
-    }
-    for space in results:
-        if (space['lng'] != 0 and space['lat'] != 0):
-            geo['features'].append({
-                "type": "Feature",
-                "geometry": {
-                    "type": "Point",
-                    "coordinates": [float(space['lng']), float(space['lat'])]
-                },
-                "properties": {
-                    "name": space['name'],
-                    "url": space['main_website_url'],
-                    "status": space['status'],
-                    "logo": space['logo_image_url']
-                }
-            })
+    geo = Space.objects.as_geojson()
     return JsonResponse(geo)
 
 
@@ -250,7 +231,7 @@ def join_supporter_step3(request, session_token):
 
     if session_token != request.user.gocardless_session_token:
         messages.error(request, 'Something went wrong, please restart your application', extra_tags='alert-danger')
-        logger.error("Error in join_supporter_step3 - session tokens don't match", extra=request.user)
+        logger.error("Error in join_supporter_step3 - session tokens don't match", extra={'user':request.user})
         return redirect(reverse('join_supporter_step1'))
 
     # get gocardless client object
@@ -300,15 +281,15 @@ def join_supporter_step3(request, session_token):
             msg.send()
         except Exception as e:
             # TODO: oh dear - how should we handle this gracefully?!?
-            logger.error("Error in join_supporter_step3 - failed to send email: "+str(e), extra=request.user)
+            logger.error("Error in join_supporter_step3 - failed to send email: "+str(e), extra={'user':request.user})
 
     except gocardless_pro.errors.InvalidStateError as e:
         messages.error(request, "Invalid State: " + str(e), extra_tags='alert-danger')
-        logger.error("Error in join_supporter_step3 - invalid gocardless state: "+str(e), extra=request.user)
+        logger.error("Error in join_supporter_step3 - invalid gocardless state: "+str(e), extra={'user':request.user})
 
     except Exception as e:
         messages.error(request, "Exception: " + str(e), extra_tags='alert-danger')
-        logger.error("Error in join_supporter_step3 - error in mandate creation: "+repr(e), extra=request.user)
+        logger.error("Error in join_supporter_step3 - error in mandate creation: "+repr(e), extra={'user':request.user})
 
     return render(request, 'supporter/supporter_step3.html')
 
@@ -317,7 +298,7 @@ def supporter_approval(request, session_token, action):
 
     if action != 'approve' and action != 'reject':
         # this shouldn't happen - just redirect to home
-        logger.error("Error in supporter_approval - unexpected action: "+action, extra=request.user)
+        logger.error("Error in supporter_approval - unexpected action: "+action, extra={'user':request.user})
         return redirect('/')
 
     try:
@@ -356,7 +337,7 @@ def supporter_approval(request, session_token, action):
             msg.send()
         except Exception as e:
             # TODO: oh dear - how should we handle this gracefully?!?
-            logger.error("Error in supporter_approval - unable to send email: "+str(e), extra=request.user)
+            logger.error("Error in supporter_approval - unable to send email: "+str(e), extra={'user':request.user})
 
 
         # get gocardless client object
@@ -386,7 +367,8 @@ def supporter_approval(request, session_token, action):
                             # TODO: decide if we want to add metadata to the payment
                         }
                     }, headers={
-                        'Idempotency-Key' : 'random_key',
+                        # TODO: replace this with a proper key, as will only allow a single payment to ever be created!
+                        'Idempotency-Key' : user.gocardless_mandate_id,
                 })
 
                 # Keep hold of this payment ID - we will use it in a minute
@@ -395,7 +377,7 @@ def supporter_approval(request, session_token, action):
                 print(payment.__dict__)
 
             except Exception as e:
-                logger.error("Error in supporter_approval - exception creating payment: "+repr(e), extra=request.user)
+                logger.error("Error in supporter_approval - exception creating payment: "+repr(e), extra={'user':user})
 
 
 
@@ -416,7 +398,7 @@ def supporter_approval(request, session_token, action):
 
 
             except Exception as e:
-                logger.error("Error in supporter_approval - exception cancelling mandate: "+repr(e), extra=request.user)
+                logger.error("Error in supporter_approval - exception cancelling mandate: "+repr(e), extra={'user':request.user})
 
 
         # make a context object for the template to render
@@ -430,7 +412,7 @@ def supporter_approval(request, session_token, action):
 
     except User.DoesNotExist as e:
         # aargh - that's not right - redirect to home
-        logger.error("Error in supporter_approval - user does not exist: "+str(e), extra=request.user)
+        logger.error("Error in supporter_approval - user does not exist: "+str(e), extra={'user':request.user})
         return redirect('/')
 
 
@@ -445,7 +427,14 @@ class Login(View):
         user = authenticate(username=username, password=password)
         if user is not None:
             login(request, user)
-            return redirect('/home')
+
+            # mark user as active (must have completed signup if they are able to login)
+            if not user.active:
+                user.active = True
+                user.save()
+
+            # FIXME: Redirect to page in 'next' query param ?
+            return redirect('/profile')
         else:
             messages.error(request, "Invalid username or password", extra_tags='alert-danger')
             logger.error("Error in Login - invalid username or password: "+username)
@@ -464,7 +453,7 @@ class SignupView(CreateView):
 
     # make request object available to form
     def get_form_kwargs(self):
-        kw = super(UserUpdate, self).get_form_kwargs()
+        kw = super(SignupView, self).get_form_kwargs()
         kw['request'] = self.request
         return kw
 
@@ -480,8 +469,8 @@ class SignupView(CreateView):
             # Copied from django/contrib/auth/views.py : password_reset
             opts = {
                 'use_https': self.request.is_secure(),
-                'email_template_name': 'main/verification.html',
-                'subject_template_name': 'main/verification_subject.txt',
+                'email_template_name': 'user_space_verification/verification.html',
+                'subject_template_name': 'user_space_verification/verification_subject.txt',
                 'request': self.request,
             }
             # This form sends the email on save()
@@ -520,7 +509,7 @@ def space_approval(request, key, action):
             'hackspace': user.space.name,
             'action': ('approving' if action=='approve' else 'rejecting')
         }
-        return render(request, 'main/space_approval.html', context)
+        return render(request, 'user_space_verification/space_approval.html', context)
 
     except User.DoesNotExist as e:
         # aargh - that's not right - redirect to home

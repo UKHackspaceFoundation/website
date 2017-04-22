@@ -119,6 +119,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 AUTH_USER_MODEL = 'main.User'
 
+LOGIN_URL = '/login'
+
 # Internationalization
 # https://docs.djangoproject.com/en/1.10/topics/i18n/
 

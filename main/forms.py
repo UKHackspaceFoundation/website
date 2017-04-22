@@ -16,9 +16,12 @@ logger = logging.getLogger(__name__)
 
 
 class CustomUserCreationForm(ModelForm):
+    # insert a field to indicate approval to Code of Conduct, defaults to false
+    agree_to_coc = forms.BooleanField()
+
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ('email','first_name','last_name','space',)
+        fields = ('email','first_name','last_name','space','agree_to_coc')
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
@@ -26,53 +29,71 @@ class CustomUserCreationForm(ModelForm):
         # override User model to ensure first and last names are required
         self.fields['first_name'].required = True
         self.fields['last_name'].required = True
+        # check if user is active, if active, then disable the coc field
+        if self.request.user.active:
+            del self.fields['agree_to_coc']
+
+    # Add validation to ensure agreement to code of conduct
+    def clear_agree_to_coc(self):
+        data = self.cleaned_data['agree_to_coc']
+        if not data:
+            raise forms.ValidationError("You must agree to the Code of Conduct to register")
+        return data
 
     def save(self, commit=True):
         if self.has_changed() and 'space' in self.changed_data:
             # get a reference to the user object
             user = super(CustomUserCreationForm, self).save(False)
 
-            # reset space approval status
-            user.space_status = 'Pending'
+            # see if user has selected None
+            if user.space == None:
+                # reset space status
+                user.space_status = 'Blank'
 
-            # populate the approver email address
-            # TODO: Use Representative(s) email if available
-            # If space has a contact email address, then use that:
-            if user.space.email != "":
-                user.space_approver = user.space.email
+
             else:
-                # otherwise use the default contact address for the site
-                user.space_approver = getattr(settings, "DEFAULT_FROM_EMAIL", None)
 
-            # note the date
-            user.space_request_date = timezone.now()
+                # reset space approval status
+                user.space_status = 'Pending'
 
-            # generate a unique key for this request
-            user.space_request_key = uuid.uuid4().hex
+                # populate the approver email address
+                # TODO: Use Representative(s) email if available
+                # If space has a contact email address, then use that:
+                if user.space.email != "":
+                    user.space_approver = user.space.email
+                else:
+                    # otherwise use the default contact address for the site
+                    user.space_approver = getattr(settings, "DEFAULT_FROM_EMAIL", None)
 
-            # send approval request email
-            htmly = get_template('main/space_approval_email.html')
+                # note the date
+                user.space_request_date = timezone.now()
 
-            d = Context({
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'hackspace': user.space.name,
-                'approve_url': self.request.build_absolute_uri(reverse('space-approval', kwargs={'key': user.space_request_key, 'action':'approve'} )),
-                'reject_url': self.request.build_absolute_uri(reverse('space-approval', kwargs={'key': user.space_request_key, 'action':'reject'} ))
-            })
+                # generate a unique key for this request
+                user.space_request_key = uuid.uuid4().hex
 
-            subject = "Is " + user.first_name +" " + user.last_name + " a member of " + user.space.name + "?"
-            from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
-            to = user.space_approver
-            message = htmly.render(d)
-            try:
-                msg = EmailMessage(subject, message, to=[to], from_email=from_email)
-                msg.content_subtype = 'html'
-                msg.send()
-            except Exception as e:
-                # TODO: oh dear - how should we handle this gracefully?!?
-                logger.error("Error sending space approval email: " + str(e))
+                # send approval request email
+                htmly = get_template('user_space_verification/space_approval_email.html')
+
+                d = Context({
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'hackspace': user.space.name,
+                    'approve_url': self.request.build_absolute_uri(reverse('space-approval', kwargs={'key': user.space_request_key, 'action':'approve'} )),
+                    'reject_url': self.request.build_absolute_uri(reverse('space-approval', kwargs={'key': user.space_request_key, 'action':'reject'} ))
+                })
+
+                subject = "Is " + user.first_name +" " + user.last_name + " a member of " + user.space.name + "?"
+                from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
+                to = user.space_approver
+                message = htmly.render(d)
+                try:
+                    msg = EmailMessage(subject, message, to=[to], from_email=from_email)
+                    msg.content_subtype = 'html'
+                    msg.send()
+                except Exception as e:
+                    # TODO: oh dear - how should we handle this gracefully?!?
+                    print("Error sending email" + str(e))
 
 
         # commit changes to the DB

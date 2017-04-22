@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Home | Hackspace Foundation{% endblock %}
+{% block title %}Profile | Hackspace Foundation{% endblock %}
 
 {% block content %}
 
@@ -139,7 +139,7 @@
             </div>
         </div>
 
-        {% if user.space %}
+        {% if user.space and user.space_status == 'Approved' %}
             {% if user.member_type != "Supporter" %}
                 <div class="panel panel-default">
                     <div class="panel-heading">
