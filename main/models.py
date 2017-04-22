@@ -37,6 +37,30 @@ class User(AbstractUser):
 
 
 
+class SpaceManager(models.Manager):
+    def active_spaces(self):
+        return super(SpaceManager, self).get_queryset().filter(status="Active") | super(SpaceManager, self).get_queryset().filter(status="Starting")
+
+    def inactive_spaces(self):
+        return super(SpaceManager, self).get_queryset().filter(status="Defunct") | super(SpaceManager, self).get_queryset().filter(status="Suspended")
+
+    def as_json(self):
+        return {'spaces': list(
+            super(SpaceManager, self).get_queryset().values('name', 'lat', 'lng', 'main_website_url', 'logo_image_url', 'status')
+        )}
+
+    def as_geojson(self):
+        results = self.all()
+        geo = {
+            "type": "FeatureCollection",
+            "features": []
+        }
+        for space in results:
+            if space.valid_location():
+                geo['features'].append( space.as_geojson_feature() )
+        return geo
+
+
 class Space(models.Model):
 
     STATUS_CHOICES = (
@@ -69,6 +93,8 @@ class Space(models.Model):
     changed_date = models.DateTimeField(default=timezone.now)
     email = models.CharField(max_length=200, blank=True)
 
+    objects = SpaceManager()
+
     class Meta:
         ordering = ["name"]
 
@@ -78,3 +104,21 @@ class Space(models.Model):
 
     def __str__(self):
         return self.name
+
+    def valid_location(self):
+        return (self.lng != 0 and self.lat != 0)
+
+    def as_geojson_feature(self):
+        return {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [float(self.lng), float(self.lat)]
+            },
+            "properties": {
+                "name": self.name,
+                "url": self.main_website_url,
+                "status": self.status,
+                "logo": self.logo_image_url
+            }
+        }
