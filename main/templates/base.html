@@ -38,7 +38,7 @@
         <div class="container">
             {% block footer %}
             <div class="pull-right">Copyright ©2017. All Rights Reserved</div>
-            <a href="/foundation/codeOfConduct.md">Code of Conduct</a>
+            <a href="{% url 'foundation' path='codeOfConduct.md' %}">Code of Conduct</a>
             {% endblock %}
         </div>
     </div>

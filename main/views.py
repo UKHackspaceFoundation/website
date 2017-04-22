@@ -165,7 +165,7 @@ def import_spaces(request):
             srecord.save()
         # else
             # existing record, do nothing for now
-    return redirect('/space_detail')
+    return redirect(reverse_lazy('space_detail'))
 
 
 
@@ -299,7 +299,7 @@ def supporter_approval(request, session_token, action):
     if action != 'approve' and action != 'reject':
         # this shouldn't happen - just redirect to home
         logger.error("Error in supporter_approval - unexpected action: "+action, extra={'user':request.user})
-        return redirect('/')
+        return redirect(reverse_lazy('index'))
 
     try:
         # lookup user info based on key
@@ -413,7 +413,7 @@ def supporter_approval(request, session_token, action):
     except User.DoesNotExist as e:
         # aargh - that's not right - redirect to home
         logger.error("Error in supporter_approval - user does not exist: "+str(e), extra={'user':request.user})
-        return redirect('/')
+        return redirect(reverse_lazy('index'))
 
 
 
@@ -434,7 +434,7 @@ class Login(View):
                 user.save()
 
             # FIXME: Redirect to page in 'next' query param ?
-            return redirect('/profile')
+            return redirect(reverse_lazy('profile'))
         else:
             messages.error(request, "Invalid username or password", extra_tags='alert-danger')
             logger.error("Error in Login - invalid username or password: "+username)
@@ -443,7 +443,7 @@ class Login(View):
 
 def logout_view(request):
     logout(request)
-    return redirect('/')
+    return redirect(reverse_lazy('index'))
 
 
 class SignupView(CreateView):
@@ -476,7 +476,7 @@ class SignupView(CreateView):
             # This form sends the email on save()
             reset_form.save(**opts)
 
-            return redirect('signup-done')
+            return redirect(reverse_lazy('signup-done'))
         except Exception as e:
             # boo - most likely error is ConnectionRefused, but could be others
             # best to delete partially formed user object so we don't leave useless entries in the database
@@ -484,14 +484,14 @@ class SignupView(CreateView):
             messages.error(self.request, "Error emailing verification link: " + str(e), extra_tags='alert-danger')
             logger.error("Error in SignupView - unable to send password reset email: "+str(e))
 
-            return redirect('signup')
+            return redirect(reverse_lazy('signup'))
 
 
 def space_approval(request, key, action):
 
     if action != 'approve' and action != 'reject':
         # this shouldn't happen - just redirect to home
-        return redirect('/')
+        return redirect(reverse_lazy('index'))
 
     try:
         # lookup user info based on key
@@ -513,7 +513,7 @@ def space_approval(request, key, action):
 
     except User.DoesNotExist as e:
         # aargh - that's not right - redirect to home
-        return redirect('/')
+        return redirect(reverse_lazy('index'))
 
 
 def resources(request, path):
