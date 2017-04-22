@@ -8,11 +8,20 @@ from django.template import Context
 from django.conf import settings
 import uuid
 from django.urls import reverse
+from django import forms
+import logging
+
+# get instance of a logger
+logger = logging.getLogger(__name__)
+
 
 class CustomUserCreationForm(ModelForm):
+    # insert a field to indicate approval to Code of Conduct, defaults to false
+    agree_to_coc = forms.BooleanField()
+
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ('email','first_name','last_name','space',)
+        fields = ('email','first_name','last_name','space','agree_to_coc')
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
@@ -20,6 +29,16 @@ class CustomUserCreationForm(ModelForm):
         # override User model to ensure first and last names are required
         self.fields['first_name'].required = True
         self.fields['last_name'].required = True
+        # check if user is active, if active, then disable the coc field
+        if self.request.user.active:
+            del self.fields['agree_to_coc']
+
+    # Add validation to ensure agreement to code of conduct
+    def clear_agree_to_coc(self):
+        data = self.cleaned_data['agree_to_coc']
+        if not data:
+            raise forms.ValidationError("You must agree to the Code of Conduct to register")
+        return data
 
     def save(self, commit=True):
         if self.has_changed() and 'space' in self.changed_data:
@@ -79,3 +98,23 @@ class CustomUserCreationForm(ModelForm):
 
         # commit changes to the DB
         return super(CustomUserCreationForm, self).save(commit)
+
+
+class SupporterMemberForm(ModelForm):
+    class Meta:
+        model = User
+        fields = ('member_fee','member_statement')
+
+    # ensure member_fee is not less than £10.00
+    def clean_member_fee(self):
+        data = self.cleaned_data['member_fee']
+        if data < 10:
+            raise forms.ValidationError("Minimum £10.00")
+        return data
+
+    # ensure member_statement is not empty
+    def clean_member_statement(self):
+        data = self.cleaned_data['member_statement']
+        if data == "":
+            raise forms.ValidationError("Please write at least a few words :)")
+        return data

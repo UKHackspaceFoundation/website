@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Home | Hackspace Foundation{% endblock %}
+{% block title %}Profile | Hackspace Foundation{% endblock %}
 
 {% block content %}
 
@@ -27,24 +27,64 @@
             </div>
         </div>
 
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Your Membership</h3>
+        {% if user.member_type != "Representative" %}
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Your Membership {% if user.member_status == "Pending" %} is Pending!{% endif %}</h3>
+                </div>
+                <div class="panel-body">
+
+                    {% if user.member_type == "None" %}
+
+                        {% if user.space %}
+                            <p>Irrespective of whether your space is a member of the foundation, you may apply for individual membership:</p>
+                        {% else %}
+                            <p>Click below to apply for individual membership to the foundation:</p>
+                        {% endif %}
+
+
+                        <a href="/join/supporter/1" class="btn btn-success">Apply</a>
+
+                    {% elif user.member_type == "Supporter" %}
+
+                        {% if user.member_status == "Pending" %}
+                            <p>Your application is pending review by the Board - we'll email you once they have made a decision</p>
+
+                        {% elif user.member_status == 'Rejected' %}
+                            <p>Unfortunately, your application has been <b>rejected</b> by the Board - you should have received an email explaining the reason(s) for their decision.</p>
+
+                        {% elif user.member_status == 'Approved' %}
+                            <dl class="dl-horizontal">
+                                <dt>Membership Status</dt> <dd>Approved</dd>
+                                <dt>Subscription Fee</dt> <dd>&pound;{{ user.member_fee }}</dd>
+                                <dt>Customer ID</dt> <dd>{{ user.gocardless_customer_id }}</dd>
+                                <dt>Mandate ID</dt> <dd>{{ user.gocardless_mandate_id }}</dd>
+                            </dl>
+
+                            <h4>Payments</h4>
+                            <table class="table table-condensed no-margin">
+                                <thead>
+                                    <tr style="background-color: #eee">
+                                        <th>Amount</th> <th>Charge Date</th> <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for payment in payments %}
+                                    <tr>
+                                        <td>&pound;{% widthratio payment.amount 100 1 %}</td>
+                                        <td>{{ payment.charge_date }}</td>
+                                        <td>{{ payment.status }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endif %}
+
+                    {% endif %}
+
+                </div>
             </div>
-            <div class="panel-body">
-
-
-                {% if user.space %}
-                    <p>Irrespective of whether your space is a member of the foundation, you may apply for individual membership:</p>
-                {% else %}
-                    <p>Click below to apply for individual membership to the foundation:</p>
-                {% endif %}
-
-
-                <a href="/join/supporter" class="btn btn-success">Apply</a>
-
-            </div>
-        </div>
+        {% endif %}
 
 <!---
         <div class="panel panel-default">
@@ -99,17 +139,19 @@
             </div>
         </div>
 
-        {% if user.space_status == 'Approved' %}
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title">{{ user.space.name }}'s Membership</h3>
-                </div>
-                <div class="panel-body">
-                    <p>If you are able to act as a Representative for your space, you may apply for it to become a Member Space:</p>
-                    <a href="/join" class="btn btn-success">Apply</a>
+        {% if user.space and user.space_status == 'Approved' %}
+            {% if user.member_type != "Supporter" %}
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">{{ user.space.name }}'s Membership</h3>
+                    </div>
+                    <div class="panel-body">
+                        <p>If you are able to act as a Representative for your space, you may apply for it to become a Member Space:</p>
+                        <a href="/join" class="btn btn-success">Apply</a>
 
+                    </div>
                 </div>
-            </div>
+            {% endif %}
 
             <div class="panel panel-default">
                 <div class="panel-heading">

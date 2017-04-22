@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Supporter Membership{% endblock %}
+
+{% block content %}
+
+<div class="col-md-8">
+    <h2>Join as a Supporter Member</h2>
+
+    <p>Supporter membership of the Hackspace Foundation is available for individuals who
+       have significant experience running hackspaces and an interest in helping the
+       Foundation.</p>
+
+    <p>Supporter members are full, voting members of the Foundation, however the voting power of all
+       supporter members is capped at 20%, with 80% of voting power with Member Spaces.</p>
+
+    <p>The membership fee for a Supporter Member is pay-what-you-want, with a minimum of £10 per year, collected by Direct Debit (via GoCardless). Admission as a
+       supporter member is at the discretion of the Board.</p>
+
+    <p>You can read more about the Hackspace Foundation <a href="/foundation/structure.md">organisational structure here.</a></p>
+
+    <div class="alert alert-info">
+        <div class="">
+
+            <form method="POST" class="form-horizontal">
+                {% csrf_token %}
+
+                <p>To continue your application, please review/amend your Subscription Fee below (minimum of &pound;10):</p>
+
+                <div class="form-group">
+                    <label for="inputEmail" class="col-sm-4 control-label">Subscription Fee</label>
+                    <div class="col-sm-8">
+                        {% if form.member_fee.errors %}
+                            {% for error in form.member_fee.errors %}
+                                <div class="alert alert-sm alert-danger">{{ error|escape }}</div>
+                            {% endfor %}
+                        {% endif %}
+                        {% render_field form.member_fee class+="form-control" %}
+                    </div>
+                </div>
+
+                <p>Could you also provide a short note to the Board explaining your reasons for applying and relevant experience:</p>
+
+                <div class="form-group">
+                    <label for="inputEmail" class="col-sm-4 control-label">Note to the Board</label>
+                    <div class="col-sm-8">
+                        {% if form.member_statement.errors %}
+                            {% for error in form.member_statement.errors %}
+                                <div class="alert alert-sm alert-danger">{{ error|escape }}</div>
+                            {% endfor %}
+                        {% endif %}
+                        {% render_field form.member_statement class+="form-control" %}
+                    </div>
+                </div>
+
+                <p>Click the button below to initiate the application - you will then be guided through setting up a Direct Debit mandate.  Please note - no payments will be arranged until your application has been approved.</p>
+
+                <div class="form-group">
+                    <div class="col-sm-offset-4 col-sm-8">
+                        <button type="submit" class="btn btn-success">Continue with Application</button>
+                    </div>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

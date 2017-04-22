@@ -6,3 +6,4 @@ requests==2.13.0
 dealer==2.0.5
 flake8==3.3.0
 django-widget-tweaks==1.4.1
+gocardless-pro==0.3.0
