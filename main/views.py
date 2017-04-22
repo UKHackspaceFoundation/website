@@ -217,8 +217,8 @@ class SignupView(CreateView):
             # Copied from django/contrib/auth/views.py : password_reset
             opts = {
                 'use_https': self.request.is_secure(),
-                'email_template_name': 'main/verification.html',
-                'subject_template_name': 'main/verification_subject.txt',
+                'email_template_name': 'user_space_verification/verification.html',
+                'subject_template_name': 'user_space_verification/verification_subject.txt',
                 'request': self.request,
             }
             # This form sends the email on save()
@@ -256,7 +256,7 @@ def space_approval(request, key, action):
             'hackspace': user.space.name,
             'action': ('approving' if action=='approve' else 'rejecting')
         }
-        return render(request, 'main/space_approval.html', context)
+        return render(request, 'user_space_verification/space_approval.html', context)
 
     except User.DoesNotExist as e:
         # aargh - that's not right - redirect to home

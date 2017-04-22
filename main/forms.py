@@ -53,7 +53,7 @@ class CustomUserCreationForm(ModelForm):
                 user.space_request_key = uuid.uuid4().hex
 
                 # send approval request email
-                htmly = get_template('main/space_approval_email.html')
+                htmly = get_template('user_space_verification/space_approval_email.html')
 
                 d = Context({
                     'email': user.email,
