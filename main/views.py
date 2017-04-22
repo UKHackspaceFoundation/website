@@ -168,21 +168,16 @@ def import_spaces(request):
     return redirect(reverse_lazy('space_detail'))
 
 
-
-def starting(request):
-    return render(request, 'main/starting.html')
-
-
 @login_required
 def join(request):
-    return render(request, 'main/join.html')
+    return render(request, 'join/join.html')
 
 
 class join_supporter_step1(LoginRequiredMixin, UpdateView):
     model = User
     success_url = reverse_lazy('join_supporter_step2')
     form_class = SupporterMemberForm
-    template_name = 'supporter/supporter_step1.html'
+    template_name = 'join_supporter/supporter_step1.html'
 
     def get_object(self, queryset=None):
         return self.request.user
@@ -259,7 +254,7 @@ def join_supporter_step3(request, session_token):
         request.user.save()
 
         # Notify admin of pending application
-        htmly = get_template('supporter/supporter_application_email.html')
+        htmly = get_template('join_supporter/supporter_application_email.html')
 
         d = Context({
             'email': request.user.email,
@@ -291,7 +286,7 @@ def join_supporter_step3(request, session_token):
         messages.error(request, "Exception: " + str(e), extra_tags='alert-danger')
         logger.error("Error in join_supporter_step3 - error in mandate creation: "+repr(e), extra={'user':request.user})
 
-    return render(request, 'supporter/supporter_step3.html')
+    return render(request, 'join_supporter/supporter_step3.html')
 
 
 def supporter_approval(request, session_token, action):
@@ -317,7 +312,7 @@ def supporter_approval(request, session_token, action):
         user.save()
 
         # email user to notify of decision
-        htmly = get_template('supporter/supporter_decision_email.html')
+        htmly = get_template('join_supporter/supporter_decision_email.html')
 
         d = Context({
             'email': user.email,
@@ -408,7 +403,7 @@ def supporter_approval(request, session_token, action):
             'email':user.email,
             'action': ('approving' if action=='approve' else 'rejecting')
         }
-        return render(request, 'supporter/supporter_approval.html', context)
+        return render(request, 'join_supporter/supporter_approval.html', context)
 
     except User.DoesNotExist as e:
         # aargh - that's not right - redirect to home
@@ -449,7 +444,7 @@ def logout_view(request):
 class SignupView(CreateView):
     form_class = CustomUserCreationForm
     model = User
-    template_name = 'main/signup.html'
+    template_name = 'signup/signup.html'
 
     # make request object available to form
     def get_form_kwargs(self):
