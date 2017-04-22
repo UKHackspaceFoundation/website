@@ -37,6 +37,15 @@ class User(AbstractUser):
 
 
 
+class SpaceManager(models.Manager):
+    def active_spaces(self):
+        return super(SpaceManager, self).get_queryset().filter(status="Active") | super(SpaceManager, self).get_queryset().filter(status="Starting")
+
+    def inactive_spaces(self):
+        return super(SpaceManager, self).get_queryset().filter(status="Defunct") | super(SpaceManager, self).get_queryset().filter(status="Suspended")
+
+
+
 class Space(models.Model):
 
     STATUS_CHOICES = (
@@ -68,6 +77,8 @@ class Space(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACTIVE')
     changed_date = models.DateTimeField(default=timezone.now)
     email = models.CharField(max_length=200, blank=True)
+
+    objects = SpaceManager()
 
     class Meta:
         ordering = ["name"]

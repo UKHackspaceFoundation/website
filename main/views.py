@@ -22,8 +22,8 @@ from django.urls import reverse_lazy
 
 
 def index(request):
-    activeSpaces = Space.objects.filter(status="Active") | Space.objects.filter(status="Starting")
-    inactiveSpaces = Space.objects.filter(status="Defunct") | Space.objects.filter(status="Suspended")
+    activeSpaces = Space.objects.active_spaces()
+    inactiveSpaces = Space.objects.inactive_spaces()
     return render(request, 'main/index.html', {
         'activeSpaces': activeSpaces,
         'inactiveSpaces': inactiveSpaces,
