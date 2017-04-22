@@ -12,9 +12,9 @@
     </div>
     <div id="navbar" class="collapse navbar-collapse">
       <ul class="nav navbar-nav">
-          <li><a href="/resources/start-a-space.md">Start a Space</a></li>
-          <li><a href="/resources/">Resources</a></li>
-          <li><a href="/foundation/mission.md">Foundation</a></li>
+          <li><a href="{% url 'resources' path='start-a-space.md' %}">Start a Space</a></li>
+          <li><a href="{% url 'resources' path='' %}">Resources</a></li>
+          <li><a href="{% url 'foundation' path='mission.md' %}">Foundation</a></li>
           {# <li><a href="{% url 'join' %}">Join</a></li> #}
         <li><a href="https://forum.hackspace.org.uk">Forum</a></li>
       </ul>
@@ -28,18 +28,18 @@
           </a>
           <ul class="dropdown-menu">
              {% if user.is_authenticated %}
-             <li><a href="/profile">Your Profile</a></li>
+             <li><a href="{% url 'profile' %}">Your Profile</a></li>
              {% endif %}
              {% if user.is_staff %}
-             <li><a href="/space_detail">Detailed Space Info</a></li>
-             <li><a href="/gitinfo">Git Info</a></li>
+             <li><a href="{% url 'space_detail' %}">Detailed Space Info</a></li>
+             <li><a href="{% url 'gitinfo' %}">Git Info</a></li>
              <li><a href="/admin">Admin</a></li>
              {% endif %}
-             <li><a href="/logout">Logout</a></li>
+             <li><a href="{% url 'logout' %}">Logout</a></li>
           </ul>
         </li>
       {% else %}
-        <li><a href="/login">Login</a></li>
+        <li><a href="{% url 'login' %}">Login</a></li>
       {% endif %}
       </ul>
     </div>

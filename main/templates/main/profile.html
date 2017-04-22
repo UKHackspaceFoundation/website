@@ -43,7 +43,7 @@
                         {% endif %}
 
 
-                        <a href="/join/supporter/1" class="btn btn-success">Apply</a>
+                        <a href="{% url 'join_supporter_step1' %}" class="btn btn-success">Apply</a>
 
                     {% elif user.member_type == "Supporter" %}
 
@@ -103,7 +103,7 @@
         <div class="panel panel-default">
             <div class="panel-heading">
                 {% if user.space_status == 'Approved' %}
-                    <a href="/edit-space-profile" class="btn-sm btn-primary pull-right">Edit Profile</a>
+                    <a href="{% url 'edit-space-profile' %}" class="btn-sm btn-primary pull-right">Edit Profile</a>
                 {% endif %}
                 <h3 class="panel-title">Your Hackspace</h3>
             </div>
@@ -147,7 +147,7 @@
                     </div>
                     <div class="panel-body">
                         <p>If you are able to act as a Representative for your space, you may apply for it to become a Member Space:</p>
-                        <a href="/join" class="btn btn-success">Apply</a>
+                        <a href="{% url 'join' %}" class="btn btn-success">Apply</a>
 
                     </div>
                 </div>
