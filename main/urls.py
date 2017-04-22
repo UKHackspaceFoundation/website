@@ -26,20 +26,20 @@ urlpatterns = [
     url(r'^start-a-space$', views.starting, name='starting'),
 
     url(r'^signup-done/$', authviews.password_reset_done, {
-        'template_name': 'main/signup_done.html',
+        'template_name': 'signup/signup_done.html',
     }, name='signup-done'),
     url(r'^signup/password/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$', authviews.password_reset_confirm, {
-        'template_name': 'main/password_reset_confirm.html',
+        'template_name': 'password_reset/password_reset_confirm.html',
         'post_reset_redirect': 'signup-complete',
     }, name='password-reset-confirm'),
     url(r'^signup-complete$', authviews.password_reset_complete, {
-        'template_name': 'main/signup_complete.html',
+        'template_name': 'signup/signup_complete.html',
     }, name='signup-complete'),
     url(r'^password-reset$', authviews.password_reset, {
-        'template_name': 'main/password_reset.html',
+        'template_name': 'password_reset/password_reset.html',
         'post_reset_redirect': 'signup-done',
-        'email_template_name': 'main/password_reset_email.html',
-        'subject_template_name': 'main/password_reset_subject.txt'
+        'email_template_name': 'password_reset/password_reset_email.html',
+        'subject_template_name': 'password_reset/password_reset_subject.txt'
     }, name='password-reset'),
 
     url(r'^space-approval/(?P<key>.*)/(?P<action>.*)$', views.space_approval, name='space-approval'),
