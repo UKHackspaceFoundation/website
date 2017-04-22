@@ -80,8 +80,7 @@ class SpaceUpdate(LoginRequiredMixin, UpdateView):
 
 # return space info as json - used for rendering map on homepage
 def spaces(request):
-    results = Space.objects.all().values('name', 'lat', 'lng', 'main_website_url', 'logo_image_url', 'status')
-    return JsonResponse({'spaces': list(results)})
+    return JsonResponse({'spaces': list(Space.objects.json_values())})
 
 
 @login_required
@@ -94,26 +93,7 @@ def gitinfo(request):
 
 # return space info as geojson
 def geojson(request):
-    results = Space.objects.all().values('name', 'lat', 'lng', 'main_website_url', 'logo_image_url', 'status')
-    geo = {
-        "type": "FeatureCollection",
-        "features": []
-    }
-    for space in results:
-        if (space['lng'] != 0 and space['lat'] != 0):
-            geo['features'].append({
-                "type": "Feature",
-                "geometry": {
-                    "type": "Point",
-                    "coordinates": [float(space['lng']), float(space['lat'])]
-                },
-                "properties": {
-                    "name": space['name'],
-                    "url": space['main_website_url'],
-                    "status": space['status'],
-                    "logo": space['logo_image_url']
-                }
-            })
+    geo = Spaces.objects.as_geojson()
     return JsonResponse(geo)
 
 

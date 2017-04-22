@@ -44,6 +44,19 @@ class SpaceManager(models.Manager):
     def inactive_spaces(self):
         return super(SpaceManager, self).get_queryset().filter(status="Defunct") | super(SpaceManager, self).get_queryset().filter(status="Suspended")
 
+    def json_values(self):
+        return super(SpaceManager, self).get_queryset().values('name', 'lat', 'lng', 'main_website_url', 'logo_image_url', 'status')
+
+    def as_geojson(self):
+        results = self.json_values()
+        geo = {
+            "type": "FeatureCollection",
+            "features": []
+        }
+        for space in results:
+            if space.valid_location():
+                geo['features'].append( space.as_geojson_feature() )
+        return geo
 
 
 class Space(models.Model):
@@ -89,3 +102,21 @@ class Space(models.Model):
 
     def __str__(self):
         return self.name
+
+    def valid_location(self):
+        return (self.lng != 0 and self.lat != 0)
+
+    def as_geojson_feature(self):
+        return {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [float(self.lng), float(self.lat)]
+            },
+            "properties": {
+                "name": self.name,
+                "url": self.main_website_url,
+                "status": self.status,
+                "logo": self.logo_image_url
+            }
+        }
