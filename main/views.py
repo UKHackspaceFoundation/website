@@ -34,9 +34,9 @@ def index(request):
 
 # homepage for registered users
 @login_required
-def home(request):
+def profile(request):
     associated_users = User.objects.filter(space=request.user.space)
-    return render(request, 'main/home.html', {
+    return render(request, 'main/profile.html', {
         'MAPBOX_ACCESS_TOKEN': getattr(settings, "MAPBOX_ACCESS_TOKEN", None),
         'associated_users': associated_users
     })
@@ -44,7 +44,7 @@ def home(request):
 
 class UserUpdate(LoginRequiredMixin, UpdateView):
     model = User
-    success_url = '/home'
+    success_url = '/profile'
     form_class = CustomUserCreationForm
 
     # make request object available to form
@@ -61,7 +61,7 @@ class UserUpdate(LoginRequiredMixin, UpdateView):
 class SpaceUpdate(LoginRequiredMixin, UpdateView):
     model = Space
     fields = ['name', 'status', 'main_website_url', 'email','have_premises', 'address_first_line', 'town', 'region', 'postcode', 'country', 'lat', 'lng', 'logo_image_url']
-    success_url = '/home'
+    success_url = '/profile'
 
     def get_object(self, queryset=None):
         return self.request.user.space
@@ -164,7 +164,8 @@ class Login(View):
         user = authenticate(username=username, password=password)
         if user is not None:
             login(request, user)
-            return redirect('/home')
+            # FIXME: Redirect to page in 'next' query param ?
+            return redirect('/profile')
         else:
             messages.error(request, "Invalid username or password")
             return render(request, 'main/login.html')

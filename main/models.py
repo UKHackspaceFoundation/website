@@ -1,7 +1,41 @@
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import (AbstractUser,BaseUserManager)
 from django.utils.translation import gettext_lazy as _
+
+
+class SpaceUserManager(BaseUserManager):
+    def create_user(self, email, password=None, space=None):
+        """
+        Creates and saves a User with the given email, space
+        and password.
+        """
+        if not email:
+            raise ValueError('Users must have an email address')
+
+        user = self.model(
+            email=self.normalize_email(email),
+            space=space,
+        )
+
+        if password:
+            user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password):
+        """
+        Creates and saves a superuser with the given email
+        and password.
+        """
+        user = self.create_user(
+            email,
+            password=password,
+        )
+        user.is_admin = True
+        user.is_staff = True
+        user.save(using=self._db)
+        return user
 
 class User(AbstractUser):
 
@@ -30,6 +64,8 @@ class User(AbstractUser):
     USERNAME_FIELD = 'email'
     # disable default required fields
     REQUIRED_FIELDS = []
+
+    objects = SpaceUserManager();
 
     class Meta:
         # set default ordering to be on first_name
