@@ -80,7 +80,7 @@ class SpaceUpdate(LoginRequiredMixin, UpdateView):
 
 # return space info as json - used for rendering map on homepage
 def spaces(request):
-    return JsonResponse({'spaces': list(Space.objects.json_values())})
+    return JsonResponse( Space.objects.as_json() )
 
 
 @login_required

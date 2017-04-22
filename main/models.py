@@ -44,8 +44,10 @@ class SpaceManager(models.Manager):
     def inactive_spaces(self):
         return super(SpaceManager, self).get_queryset().filter(status="Defunct") | super(SpaceManager, self).get_queryset().filter(status="Suspended")
 
-    def json_values(self):
-        return super(SpaceManager, self).get_queryset().values('name', 'lat', 'lng', 'main_website_url', 'logo_image_url', 'status')
+    def as_json(self):
+        return {'spaces': list(
+            super(SpaceManager, self).get_queryset().values('name', 'lat', 'lng', 'main_website_url', 'logo_image_url', 'status')
+        )}
 
     def as_geojson(self):
         results = self.all()
