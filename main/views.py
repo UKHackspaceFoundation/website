@@ -49,18 +49,7 @@ def profile(request):
     payments = None
 
     if request.user.member_status == 'Approved' and request.user.member_type == 'Supporter':
-        # get gocardless client object
-        client = gocardless_pro.Client(
-            access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
-            environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
-        )
-
-        # fetch associated gocardless payments
-        try:
-            payments = client.payments.list(params={"customer": request.user.gocardless_customer_id}).records
-
-        except Exception as e:
-            logger.error("Error in home - exception retrieving payments: " + repr(e), extra={'user':request.user})
+        payments = GocardlessPayment.objects.filter(user=request.user)
 
     return render(request, 'main/profile.html', {
         'MAPBOX_ACCESS_TOKEN': getattr(settings, "MAPBOX_ACCESS_TOKEN", None),
