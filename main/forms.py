@@ -118,3 +118,14 @@ class SupporterMemberForm(ModelForm):
         if data == "":
             raise forms.ValidationError("Please write at least a few words :)")
         return data
+
+
+class NewSpaceForm(forms.Form):
+    name = forms.CharField(required=True)
+    email = forms.EmailField(required=True)
+    main_website_url = forms.URLField(required=False)
+    address = forms.CharField(widget=forms.Textarea, required=True)
+    have_premises = forms.BooleanField(required=False)
+    notes = forms.CharField(widget=forms.Textarea, required=False)
+    lat = forms.DecimalField(max_digits=10, decimal_places=7, initial=54.1)
+    lng = forms.DecimalField(max_digits=10, decimal_places=7, initial=-2.1)

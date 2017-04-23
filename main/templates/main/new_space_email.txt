@@ -1,0 +1,16 @@
+New Space Name: {{ form.name }}
+
+Contact Email: {{ form.email }}
+Website URL: {{ form.main_website_url }}
+Have Premises: {{ form.have_premises }}
+
+Address:
+{{ form.address|safe|striptags }}
+
+Notes:
+{{ form.notes|safe|striptags }}
+
+Lat/Lon: {{ form.lat }}, {{ form.lng }}
+
+
+Use the Hackspace Foundation Admin interface to add this space to the database

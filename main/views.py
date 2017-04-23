@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.generic.edit import CreateView
 from .models import Space
-from .forms import CustomUserCreationForm, SupporterMemberForm
+from .forms import CustomUserCreationForm, SupporterMemberForm, NewSpaceForm
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 import requests
@@ -439,6 +439,40 @@ class Login(View):
 def logout_view(request):
     logout(request)
     return redirect(reverse_lazy('index'))
+
+
+def new_space(request):
+    form_class = NewSpaceForm
+
+    try:
+        if request.method == 'POST':
+            form = form_class(request.POST)
+
+            if form.is_valid():
+
+                template = get_template('main/new_space_email.txt')
+                context = Context({ 'form': form.cleaned_data })
+                content = template.render(context)
+
+                email = EmailMessage(
+                    "New space form submission",
+                    content,
+                    getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                    [getattr(settings, "BOARD_EMAIL", None)],
+                    headers = {'Reply-To': request.POST.get('email', '') }
+                )
+                email.send()
+
+                messages.info(request, "Thanks - we'll get that space added to the map ")
+                return redirect(reverse('new_space'))
+    except Exception as e:
+        messages.error(request, "Error dealing with submission, please try again", extra_tags='alert-danger')
+        logger.error("Error in new_space - exception: "+str(e))
+
+    return render(request, 'main/new_space.html', {
+        'form': form_class,
+        'MAPBOX_ACCESS_TOKEN': getattr(settings, "MAPBOX_ACCESS_TOKEN", None)
+    })
 
 
 class SignupView(CreateView):
