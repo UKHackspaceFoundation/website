@@ -174,18 +174,38 @@ class join_supporter_step1(LoginRequiredMixin, UpdateView):
 
 @login_required
 def join_supporter_step2(request):
+
+    # reset the member type and status  (in case of previous rejection)
+    request.user.member_type = 'None'
+    request.user.member_status = 'Blank'
+
+
     # get gocardless client object
     client = gocardless_pro.Client(
         access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
         environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
     )
 
+
+    # check if this user already has a valid diret debit mandate
+    if request.user.gocardless_mandate_id is not None and len(request.user.gocardless_mandate_id) > 0:
+
+        # check to see if mandate is still valid
+        mandate = client.mandates.get(request.user.gocardless_mandate_id)
+
+        if mandate.status == 'failed' or mandate.status == 'expired' or mandate.status == 'cancelled':
+
+            # existing mandate no longer valid - will need to create a new one
+            request.user.gocardless_mandate_id = ''
+            request.user.gocardless_customer_id = ''
+            request.user.save()
+
+        else:
+            # redirect to supporter_step3
+            return redirect(reverse('join_supporter_step3', kwargs={'session_token':request.user.gocardless_session_token}))
+
     # generate a new session_token
     request.user.gocardless_session_token = uuid.uuid4().hex
-
-    # reset the member type and status  (in case of previous rejection)
-    request.user.member_type = 'None'
-    request.user.member_status = 'Blank'
 
     # create a redirect_flow, pre-fill the users name and email
     redirect_flow = client.redirect_flows.create(
@@ -213,67 +233,74 @@ def join_supporter_step2(request):
 @login_required
 def join_supporter_step3(request, session_token):
 
-    if session_token != request.user.gocardless_session_token:
-        messages.error(request, 'Something went wrong, please restart your application', extra_tags='alert-danger')
-        logger.error("Error in join_supporter_step3 - session tokens don't match", extra={'user':request.user})
-        return redirect(reverse('join_supporter_step1'))
+    # check if we need to complete the redirect flow
+    if request.user.gocardless_mandate_id is None or len(request.user.gocardless_mandate_id) == 0:
 
-    # get gocardless client object
-    client = gocardless_pro.Client(
-        access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
-        environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
-    )
+        if session_token != request.user.gocardless_session_token:
+            messages.error(request, 'Something went wrong, please restart your application', extra_tags='alert-danger')
+            logger.error("Error in join_supporter_step3 - session tokens don't match", extra={'user':request.user})
+            return redirect(reverse('join_supporter_step1'))
 
-    try:
-        redirect_flow = client.redirect_flows.complete(
-            request.GET.get('redirect_flow_id', ''),
-            params = {
-                'session_token': session_token
-            }
+        # get gocardless client object
+        client = gocardless_pro.Client(
+            access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
+            environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
         )
 
-        # update the member type and status
-        request.user.member_type = 'Supporter'
-        request.user.member_status = 'Pending'
-
-        # save customer and mandate IDs
-        request.user.gocardless_mandate_id = redirect_flow.links.mandate
-        request.user.gocardless_customer_id = redirect_flow.links.customer
-
-        request.user.save()
-
-        # Notify admin of pending application
-        htmly = get_template('join_supporter/supporter_application_email.html')
-
-        d = Context({
-            'email': request.user.email,
-            'first_name': request.user.first_name,
-            'last_name': request.user.last_name,
-            'note': request.user.member_statement,
-            'fee': request.user.member_fee,
-            'approve_url': request.build_absolute_uri(reverse('supporter-approval', kwargs={'session_token':request.user.gocardless_session_token, 'action':'approve'} )),
-            'reject_url': request.build_absolute_uri(reverse('supporter-approval', kwargs={'session_token':request.user.gocardless_session_token, 'action':'reject'} ))
-        })
-
-        subject = "Supporter Member Application from " + request.user.first_name +" " + request.user.last_name
-        from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
-        to = getattr(settings, "BOARD_EMAIL", None)
-        message = htmly.render(d)
         try:
-            msg = EmailMessage(subject, message, to=[to], from_email=from_email)
-            msg.content_subtype = 'html'
-            msg.send()
+            redirect_flow = client.redirect_flows.complete(
+                request.GET.get('redirect_flow_id', ''),
+                params = {
+                    'session_token': session_token
+                }
+            )
+
+            # save customer and mandate IDs
+            request.user.gocardless_mandate_id = redirect_flow.links.mandate
+            request.user.gocardless_customer_id = redirect_flow.links.customer
+
+            request.user.save()
+
+        except gocardless_pro.errors.InvalidStateError as e:
+            messages.error(request, "Invalid State: " + str(e), extra_tags='alert-danger')
+            logger.error("Error in join_supporter_step3 - invalid gocardless state: "+str(e), extra={'user':request.user})
+
         except Exception as e:
-            # TODO: oh dear - how should we handle this gracefully?!?
-            logger.error("Error in join_supporter_step3 - failed to send email: "+str(e), extra={'user':request.user})
+            messages.error(request, "Exception: " + str(e), extra_tags='alert-danger')
+            logger.error("Error in join_supporter_step3 - error in mandate creation: "+repr(e), extra={'user':request.user})
 
-    except gocardless_pro.errors.InvalidStateError as e:
-        messages.error(request, "Invalid State: " + str(e), extra_tags='alert-danger')
-        logger.error("Error in join_supporter_step3 - invalid gocardless state: "+str(e), extra={'user':request.user})
 
+    # update the member type and status
+    request.user.member_type = 'Supporter'
+    request.user.member_status = 'Pending'
+    request.user.save()
+
+
+    # Notify admin of pending application
+    htmly = get_template('join_supporter/supporter_application_email.html')
+
+    d = Context({
+        'email': request.user.email,
+        'first_name': request.user.first_name,
+        'last_name': request.user.last_name,
+        'note': request.user.member_statement,
+        'fee': request.user.member_fee,
+        'approve_url': request.build_absolute_uri(reverse('supporter-approval', kwargs={'session_token':request.user.gocardless_session_token, 'action':'approve'} )),
+        'reject_url': request.build_absolute_uri(reverse('supporter-approval', kwargs={'session_token':request.user.gocardless_session_token, 'action':'reject'} ))
+    })
+
+    subject = "Supporter Member Application from " + request.user.first_name +" " + request.user.last_name
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
+    to = getattr(settings, "BOARD_EMAIL", None)
+    message = htmly.render(d)
+    try:
+        msg = EmailMessage(subject, message, to=[to], from_email=from_email)
+        msg.content_subtype = 'html'
+        msg.send()
     except Exception as e:
-        messages.error(request, "Exception: " + str(e), extra_tags='alert-danger')
-        logger.error("Error in join_supporter_step3 - error in mandate creation: "+repr(e), extra={'user':request.user})
+        # TODO: oh dear - how should we handle this gracefully?!?
+        logger.error("Error in join_supporter_step3 - failed to send email: "+str(e), extra={'user':request.user})
+
 
     return render(request, 'join_supporter/supporter_step3.html')
 
