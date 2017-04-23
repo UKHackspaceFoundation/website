@@ -185,3 +185,19 @@ class Space(models.Model):
                 "logo": self.logo_image_url
             }
         }
+
+
+class GocardlessPayment(models.Model):
+    id = models.CharField(max_length=16, unique=True, primary_key=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    charge_date = models.DateField(default=timezone.now)
+    amount = models.IntegerField()
+    description = models.CharField(max_length=100)
+    currency = models.CharField(max_length=10)
+    status = models.CharField(max_length=26)
+    amount_refunded = models.IntegerField()
+    reference = models.CharField(max_length=10)
+    payout_date = models.DateField(default=timezone.now)
+    mandate_id = models.CharField(max_length=16)
+    creditor_id = models.CharField(max_length=16)
+    payout_id = models.CharField(max_length=16)
