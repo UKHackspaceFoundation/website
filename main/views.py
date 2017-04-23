@@ -7,7 +7,7 @@ import json
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.generic.edit import CreateView
-from .models import Space
+from .models import Space, GocardlessPayment
 from .forms import CustomUserCreationForm, SupporterMemberForm, NewSpaceForm
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -49,18 +49,7 @@ def profile(request):
     payments = None
 
     if request.user.member_status == 'Approved' and request.user.member_type == 'Supporter':
-        # get gocardless client object
-        client = gocardless_pro.Client(
-            access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
-            environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
-        )
-
-        # fetch associated gocardless payments
-        try:
-            payments = client.payments.list(params={"customer": request.user.gocardless_customer_id}).records
-
-        except Exception as e:
-            logger.error("Error in home - exception retrieving payments: " + repr(e), extra={'user':request.user})
+        payments = GocardlessPayment.objects.filter(user=request.user)
 
     return render(request, 'main/profile.html', {
         'MAPBOX_ACCESS_TOKEN': getattr(settings, "MAPBOX_ACCESS_TOKEN", None),
@@ -345,8 +334,8 @@ def supporter_approval(request, session_token, action):
         if action == 'approve':
 
 
-            # create a payment object in the database
-            # TODO:
+            # generate idempotency key
+            key = uuid.uuid4().hex
 
             try:
                 # create payment
@@ -362,14 +351,17 @@ def supporter_approval(request, session_token, action):
                             # TODO: decide if we want to add metadata to the payment
                         }
                     }, headers={
-                        # TODO: replace this with a proper key, as will only allow a single payment to ever be created!
-                        'Idempotency-Key' : user.gocardless_mandate_id,
+                        'Idempotency-Key' : key
                 })
 
-                # Keep hold of this payment ID - we will use it in a minute
-                # It should look like "PM000260X9VKF4"
-                print("Payment ID: {}".format(payment.id))
-                print(payment.__dict__)
+                # Store payment object
+                payment.idempotency_key = key
+                obj = GocardlessPayment.objects.get_or_create_from_payload(payment)
+
+                # add user relationship to object
+                obj.user = user
+                obj.save()
+
 
             except Exception as e:
                 logger.error("Error in supporter_approval - exception creating payment: "+repr(e), extra={'user':user})

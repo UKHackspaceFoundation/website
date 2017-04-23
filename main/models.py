@@ -3,6 +3,11 @@ from django.utils import timezone
 from django.contrib.auth.models import (AbstractUser,BaseUserManager)
 from django.utils.translation import gettext_lazy as _
 import uuid
+import logging
+import gocardless_pro
+
+# get instance of a logger
+logger = logging.getLogger(__name__)
 
 
 class SpaceUserManager(BaseUserManager):
@@ -99,6 +104,22 @@ class User(AbstractUser):
         # set default ordering to be on first_name
         ordering = ["first_name"]
 
+    def sync_payments(self):
+        # get gocardless client object
+        client = gocardless_pro.Client(
+            access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
+            environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
+        )
+
+        # fetch associated gocardless payments
+        try:
+            payments = client.payments.list(params={"customer": self.gocardless_customer_id}).records
+
+            # TODO: sync payments with database
+
+        except Exception as e:
+            logger.error("Error in sync_payments - exception retrieving payments: " + repr(e), extra={'user':self})
+
 
 
 class SpaceManager(models.Manager):
@@ -186,3 +207,58 @@ class Space(models.Model):
                 "logo": self.logo_image_url
             }
         }
+
+
+class GocardlessPaymentManger(models.Manager):
+    # get_or_create that populates fields from json
+    # e.g. as received from gocardless webhook or payment creation api
+    # payload should be a dict, e.g. parsed from webhook json
+    def get_or_create_from_payload(self, payload):
+        try:
+            # create with required fields only
+            obj, created = super(GocardlessPaymentManger, self).get_or_create(
+                id = payload.id,
+                created_at = timezone.now(),
+                amount = payload.amount,
+                currency = payload.currency,
+                status = payload.status
+            )
+            # update everything else in the payload
+            for key, value in payload.__dict__.items():
+                if hasattr(obj, key):
+                    setattr(obj, key, value)
+            # don't forget the links
+            if hasattr(payload.links, 'mandate') and payload.links.mandate is not None:
+                obj.mandate_id = payload.links.mandate
+            if hasattr(payload.links, 'creditor') and payload.links.creditor is not None:
+                obj.creditor_id = payload.links.creditor
+            if hasattr(payload.links, 'payout') and payload.links.payout is not None:
+                obj.payout_id = payload.links.payout
+
+            obj.save()
+            return obj
+
+        except Exception as e:
+            logger.error("Error in get_or_create_from_payload - exception creating payment: " + repr(e), extra={'payload':payload})
+            return None
+
+
+class GocardlessPayment(models.Model):
+    id = models.CharField(max_length=16, unique=True, primary_key=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    charge_date = models.DateField(default=timezone.now, blank=True)
+    amount = models.IntegerField(default=0)
+    description = models.CharField(max_length=100, blank=True)
+    currency = models.CharField(max_length=10)
+    status = models.CharField(max_length=26)
+    amount_refunded = models.IntegerField(default=0)
+    reference = models.CharField(max_length=10, blank=True)
+    payout_date = models.DateField(default=timezone.now, blank=True)
+    mandate_id = models.CharField(max_length=16, blank=True)
+    creditor_id = models.CharField(max_length=16, blank=True)
+    payout_id = models.CharField(max_length=16, blank=True)
+    idempotency_key = models.CharField(max_length=33, blank=True)
+    user = models.ForeignKey('User', models.SET_NULL, blank=True, null=True)
+    space = models.ForeignKey('Space', models.SET_NULL, blank=True, null=True)
+
+    objects = GocardlessPaymentManger()
