@@ -223,7 +223,7 @@ def join_supporter_step3(request):
 
         except GocardlessMandate.DoesNotExist as e:
             # if not, complete the flow and create a new mandate record
-            mandate = ma.complete_redirect_flow(request, session_token)
+            mandate = ma.complete_redirect_flow(request)
 
         # now do the email approval stuff
         ma.send_approval_request(request)

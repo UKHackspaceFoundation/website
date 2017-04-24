@@ -288,7 +288,7 @@ class SupporterMembership(models.Model):
             params={
                 "description" : "Hackspace Foundation Individual Membership",
                 "session_token" : self.session_token,
-                "success_redirect_url" : request.build_absolute_uri(reverse('join_supporter_step3', kwargs={'session_token':self.session_token} )),
+                "success_redirect_url" : request.build_absolute_uri( reverse('join_supporter_step3') ),
                 "prefilled_customer": {
                     "given_name": self.user.first_name,
                     "family_name": self.user.last_name,
