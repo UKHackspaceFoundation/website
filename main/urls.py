@@ -2,6 +2,8 @@ from django.conf.urls import url
 
 from . import views
 from django.contrib.auth import views as authviews
+from django.views.generic.base import RedirectView
+from django.urls import reverse_lazy
 
 urlpatterns = [
     url(r'^$', views.index, name='index'),
@@ -43,4 +45,10 @@ urlpatterns = [
     }, name='password-reset'),
 
     url(r'^space-approval/(?P<key>.*)/(?P<action>.*)$', views.space_approval, name='space-approval'),
+
+    # redirects (e.g. old urls)
+    # old start-a-space view:
+    url(r'^start-a-space$', RedirectView.as_view(url=reverse_lazy('resources', kwargs={'path':'start-a-space.md'})), name='go-to-start-a-space'),
+    # old wiki views:
+    url(r'view/(.*)$', RedirectView.as_view(url='/'), name='go-to-index'),
 ]
