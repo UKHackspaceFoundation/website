@@ -23,6 +23,8 @@
     <div class="alert alert-info">
         <div class="">
 
+            {{ form.non_field_errors }}
+
             <form method="POST" class="form-horizontal">
                 {% csrf_token %}
 
@@ -31,12 +33,12 @@
                 <div class="form-group">
                     <label for="inputEmail" class="col-sm-4 control-label">Subscription Fee</label>
                     <div class="col-sm-8">
-                        {% if form.member_fee.errors %}
-                            {% for error in form.member_fee.errors %}
+                        {% if form.fee.errors %}
+                            {% for error in form.fee.errors %}
                                 <div class="alert alert-sm alert-danger">{{ error|escape }}</div>
                             {% endfor %}
                         {% endif %}
-                        {% render_field form.member_fee class+="form-control" %}
+                        {% render_field form.fee class+="form-control" %}
                     </div>
                 </div>
 
@@ -45,12 +47,12 @@
                 <div class="form-group">
                     <label for="inputEmail" class="col-sm-4 control-label">Note to the Board</label>
                     <div class="col-sm-8">
-                        {% if form.member_statement.errors %}
-                            {% for error in form.member_statement.errors %}
+                        {% if form.statement.errors %}
+                            {% for error in form.statement.errors %}
                                 <div class="alert alert-sm alert-danger">{{ error|escape }}</div>
                             {% endfor %}
                         {% endif %}
-                        {% render_field form.member_statement class+="form-control" %}
+                        {% render_field form.statement class+="form-control" %}
                     </div>
                 </div>
 

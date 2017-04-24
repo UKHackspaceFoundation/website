@@ -30,7 +30,7 @@
         {% if user.member_type != "Representative" %}
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">Your Membership {% if user.member_status == "Pending" %} is Pending!{% endif %}</h3>
+                    <h3 class="panel-title">Your Membership {% if user.supporter_status == "Pending" %} is Pending!{% endif %}</h3>
                 </div>
                 <div class="panel-body">
 
@@ -42,23 +42,22 @@
                             <p>Click below to apply for individual membership to the foundation:</p>
                         {% endif %}
 
-
                         <a href="{% url 'join_supporter_step1' %}" class="btn btn-success">Apply</a>
 
                     {% elif user.member_type == "Supporter" %}
 
-                        {% if user.member_status == "Pending" %}
+                        {% if user.supporter_status == "Pending" %}
                             <p>Your application is pending review by the Board - we'll email you once they have made a decision</p>
 
-                        {% elif user.member_status == 'Rejected' %}
+                        {% elif user.supporter_status == 'Rejected' %}
                             <p>Unfortunately, your application has been <b>rejected</b> by the Board - you should have received an email explaining the reason(s) for their decision.</p>
 
-                        {% elif user.member_status == 'Approved' %}
+                        {% elif user.supporter_status == 'Approved' %}
                             <dl class="dl-horizontal">
                                 <dt>Membership Status</dt> <dd>Approved</dd>
-                                <dt>Subscription Fee</dt> <dd>&pound;{{ user.member_fee }}</dd>
-                                <dt>Customer ID</dt> <dd>{{ user.gocardless_customer_id }}</dd>
-                                <dt>Mandate ID</dt> <dd>{{ user.gocardless_mandate_id }}</dd>
+                                <dt>Subscription Fee</dt> <dd>&pound;{{ user.supporter_membership.fee }}</dd>
+                                <dt>Customer ID</dt> <dd></dd>
+                                <dt>Mandate ID</dt> <dd></dd>
                             </dl>
 
                             <h4>Payments</h4>

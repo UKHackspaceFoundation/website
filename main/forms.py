@@ -1,6 +1,6 @@
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
-from .models import User
+from .models import User, SupporterMembership
 from django.utils import timezone
 from django.core.mail import EmailMessage
 from django.template.loader import get_template
@@ -100,21 +100,21 @@ class CustomUserCreationForm(ModelForm):
         return super(CustomUserCreationForm, self).save(commit)
 
 
-class SupporterMemberForm(ModelForm):
+class SupporterMembershipForm(ModelForm):
     class Meta:
-        model = User
-        fields = ('member_fee','member_statement')
+        model = SupporterMembership
+        fields = ('fee','statement')
 
-    # ensure member_fee is not less than £10.00
-    def clean_member_fee(self):
-        data = self.cleaned_data['member_fee']
+    # ensure fee is not less than £10.00
+    def clean_fee(self):
+        data = self.cleaned_data['fee']
         if data < 10:
             raise forms.ValidationError("Minimum £10.00")
         return data
 
-    # ensure member_statement is not empty
-    def clean_member_statement(self):
-        data = self.cleaned_data['member_statement']
+    # ensure statement is not empty
+    def clean_statement(self):
+        data = self.cleaned_data['statement']
         if data == "":
             raise forms.ValidationError("Please write at least a few words :)")
         return data
