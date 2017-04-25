@@ -239,6 +239,8 @@ class SupporterMembership(models.Model):
 
     # application status
     status = models.CharField(max_length=8, choices=APPROVAL_STATUS_CHOICES, default='Pending')
+    # how many times have we successfully sent an approval request email:
+    approval_request_count = models.IntegerField(default=0)
     # subscription fee (chosen by user)
     fee = models.DecimalField(max_digits=8, decimal_places=2, default=10.00)
     # application statement - aka: why i should be a member statement
@@ -263,6 +265,13 @@ class SupporterMembership(models.Model):
 
     def __str__(self):
         return self.user.name() + ' - ' + self.created_at.strftime('%Y-%m-%d')
+
+    # is there an active mandate?
+    def has_active_mandate(self):
+        try:
+            return self.mandate().status != ''
+        except GocardlessMandate.DoesNotExist as e:
+            return False
 
     # get mandate status or throw DoesNotExist
     def mandate_status(self):
@@ -338,9 +347,10 @@ class SupporterMembership(models.Model):
 
     # send approval request email
     def send_approval_request(self, request):
-        # Notify admin of pending application
+        # get template
         htmly = get_template('join_supporter/supporter_application_email.html')
 
+        # build context
         d = Context({
             'email': self.user.email,
             'first_name': self.user.first_name,
@@ -351,17 +361,25 @@ class SupporterMembership(models.Model):
             'reject_url': request.build_absolute_uri(reverse('supporter-approval', kwargs={'session_token':self.session_token, 'action':'reject'} ))
         })
 
+        # prep headers
         subject = "Supporter Member Application from " + self.user.first_name +" " + self.user.last_name
         from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
         to = getattr(settings, "BOARD_EMAIL", None)
+
+        # render template
         message = htmly.render(d)
         try:
+            # send email
             msg = EmailMessage(subject, message, to=[to], from_email=from_email)
             msg.content_subtype = 'html'
             msg.send()
+
+            # track how many times we've sent a request
+            self.approval_request_count += 1;
+            self.save()
+
         except Exception as e:
             # TODO: oh dear - how should we handle this gracefully?!?
-            # perhaps write a flag to self indicating if the mail was successfully sent?  to allow user to retry
             logger.error("Error in send_approval_request - failed to send email: "+str(e), extra={'SupporterMembership':self})
 
 

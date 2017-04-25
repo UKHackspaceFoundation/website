@@ -30,7 +30,7 @@
         {% if user.member_type != "Representative" %}
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">Your Membership {% if user.supporter_status == "Pending" %} is Pending!{% endif %}</h3>
+                    <h3 class="panel-title">Your Membership</h3>
                 </div>
                 <div class="panel-body">
 
@@ -47,7 +47,39 @@
                     {% elif user.member_type == "Supporter" %}
 
                         {% if user.supporter_status == "Pending" %}
-                            <p>Your application is pending review by the Board - we'll email you once they have made a decision</p>
+                            <p><b>Application Progress:</b></p>
+                            <table class="table no-margin">
+                                <tr>
+                                    <td>Direct Debit Mandate Created</td>
+                                    <td>
+                                        {% if user.supporter_membership.has_active_mandate %}
+                                            <span class="glyphicon glyphicon-ok-sign text-success" aria-hidden="true"></span>
+                                        {% else %}
+                                            <span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true"></span>
+
+                                            <a href="{% url 'join_supporter_step2' %}" class="btn btn-primary btn-sm">Create</a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Approval Requested</td>
+                                    <td>
+                                        {% if user.supporter_membership.approval_request_count > 0 %}
+                                            <span class="glyphicon glyphicon-ok-sign text-success" aria-hidden="true"></span>
+                                        {% else %}
+                                            <span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true"></span>
+
+                                            <a href="{% url 'join_supporter_step3' %}" class="btn btn-primary btn-sm">Send</a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Application Approved</td>
+                                    <td>
+                                        <span class="glyphicon glyphicon-question-sign text-warning" aria-hidden="true" data-toggle="tooltip" title="Your application is pending review by the Board"></span>
+                                    </td>
+                                </tr>
+                            </table>
 
                         {% elif user.supporter_status == 'Rejected' %}
                             <p>Unfortunately, your application has been <b>rejected</b> by the Board - you should have received an email explaining the reason(s) for their decision.</p>
