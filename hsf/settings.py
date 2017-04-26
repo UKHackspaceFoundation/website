@@ -45,9 +45,7 @@ GOCARDLESS_ENVIRONMENT = "sandbox"
 
 INSTALLED_APPS = [
     'main.apps.MainConfig',
-    'membership.apps.MembershipConfig',
     'distelbot.apps.DistelbotConfig',
-    'trademarks.apps.TrademarksConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
