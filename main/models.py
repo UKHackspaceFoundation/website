@@ -15,6 +15,14 @@ import uuid
 logger = logging.getLogger(__name__)
 
 
+# utility functions:
+def get_gocardless_client():
+    return gocardless_pro.Client(
+        access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
+        environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
+    )
+
+
 class SpaceUserManager(BaseUserManager):
     def create_user(self, email, password=None, space=None):
         """
@@ -284,10 +292,7 @@ class SupporterMembership(models.Model):
     # create a new gocardless redirect flow and return redirect_url
     def get_redirect_flow_url(self, request):
         # get gocardless client object
-        client = gocardless_pro.Client(
-            access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
-            environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
-        )
+        client = get_gocardless_client()
 
         # generate a new session_token
         self.session_token = uuid.uuid4().hex
@@ -315,10 +320,7 @@ class SupporterMembership(models.Model):
     # will throw Gocardless and/or other exceptions
     def complete_redirect_flow(self, request):
         # get gocardless client object
-        client = gocardless_pro.Client(
-            access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
-            environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
-        )
+        client = get_gocardless_client()
 
         # try to complete the redirect flow
         redirect_flow = client.redirect_flows.complete(
@@ -383,7 +385,69 @@ class SupporterMembership(models.Model):
             logger.error("Error in send_approval_request - failed to send email: "+str(e), extra={'SupporterMembership':self})
 
 
+    # email user to notify of decision
+    def send_application_decision(self):
+        htmly = get_template('join_supporter/supporter_decision_email.html')
 
+        d = Context({
+            'email': self.user.email,
+            'first_name': self.user.first_name,
+            'last_name': self.user.last_name,
+            'fee': self.user.member_fee,
+            'status': self.status
+        })
+
+        subject = "Hackspace Foundation Membership Application"
+        from_email = getattr(settings, "BOARD_EMAIL", None)
+        to = self.user.email
+        message = htmly.render(d)
+        try:
+            msg = EmailMessage(subject, message, to=[to], from_email=from_email)
+            msg.content_subtype = 'html'
+            msg.send()
+
+            return True
+        except Exception as e:
+            logger.error("Error in send_application_decision - unable to send email: "+str(e), extra={'membership application':self})
+            return False
+
+
+    # approve the membership application (and create initial payment)
+    def approve(self):
+
+        # check user has not already been approved/rejected (e.g. by someone else!)
+        if user.member_status != 'Pending':
+            return False
+
+        # update membership status
+        self.status = 'Approved'
+        self.save()
+
+        self.send_application_decision()
+
+        if self.has_active_mandate():
+            return self.mandate().create_payment(self.fee)
+
+        return True
+
+
+    # reject the membership application (and cancel mandate)
+    def reject(self):
+
+        # check user has not already been approved/rejected (e.g. by someone else!)
+        if user.member_status != 'Pending':
+            return False
+
+        # update membership status
+        self.status = 'Rejected'
+        self.save()
+
+        self.send_application_decision()
+
+        if self.has_active_mandate():
+            return self.mandate().cancel()
+
+        return True
 
 
     # TODO: update started_at when first payment received
@@ -462,8 +526,69 @@ class GocardlessMandate(models.Model):
     def is_active(self):
         return not (self.status == 'failed' or self.status == 'expired' or self.status == 'cancelled')
 
-    # TODO: get associated payments
-    # TODO: get latest payment
+    def cancel(self):
+        # get gocardless client object
+        client = get_gocardless_client()
+
+        try:
+            # cancel mandate
+            mandate = client.mandates.cancel(self.id)
+
+            # update status (should be cancelled)
+            self.status = mandate.status
+            self.save()
+
+            return True
+
+        except Exception as e:
+            logger.error("Error in GocardlessMandate.cancel: "+repr(e), extra={'mandate':self})
+            return False
+
+
+    # Get associated payments
+    def get_payments(self):
+        return GocardlessPayment.objects.filter(mandate=self)
+
+
+    # Get latest payment (will throw DoesNotExist exception if none)
+    def get_latest_payment(self):
+        return self.get_payments().latest('created_at')
+
+
+    def create_payment(self, amount):
+        # get gocardless client object
+        client = get_gocardless_client()
+
+        # generate idempotency key
+        key = uuid.uuid4().hex
+
+        try:
+            # create payment
+            payment = client.payments.create(
+                params={
+                    "amount" : int(amount * 100), # convert to pence
+                    "currency" : "GBP",
+                    "links" : {
+                        "mandate": self.id
+                    },
+                    "metadata": {
+                        "type":"SupporterSubscription"
+                        # TODO: decide if we want to add metadata to the payment
+                    }
+                }, headers={
+                    'Idempotency-Key' : key
+            })
+
+            # Store payment object
+            payment.idempotency_key = key
+            obj = GocardlessPayment.objects.get_or_create_from_payload(payment, self)
+
+            return obj
+
+        except Exception as e:
+            logger.error("Error in GocardlessMandate.create_payment: "+repr(e), extra={'mandate':self})
+            return None
+
 
 
 
@@ -471,7 +596,7 @@ class GocardlessPaymentManger(models.Manager):
     # get_or_create that populates fields from json
     # e.g. as received from gocardless webhook or payment creation api
     # payload should be a dict, e.g. parsed from webhook json
-    def get_or_create_from_payload(self, payload):
+    def get_or_create_from_payload(self, payload, mandate):
         try:
             # create with required fields only
             obj, created = super(GocardlessPaymentManger, self).get_or_create(
@@ -486,12 +611,13 @@ class GocardlessPaymentManger(models.Manager):
                 if hasattr(obj, key):
                     setattr(obj, key, value)
             # don't forget the links
-            if hasattr(payload.links, 'mandate') and payload.links.mandate is not None:
-                obj.mandate_id = payload.links.mandate
             if hasattr(payload.links, 'creditor') and payload.links.creditor is not None:
                 obj.creditor_id = payload.links.creditor
             if hasattr(payload.links, 'payout') and payload.links.payout is not None:
                 obj.payout_id = payload.links.payout
+
+            # associate to mandate
+            obj.mandate = mandate
 
             obj.save()
             return obj

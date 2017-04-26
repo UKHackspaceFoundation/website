@@ -46,10 +46,9 @@
 
                     {% elif user.member_type == "Supporter" %}
 
-                        {% if user.supporter_status == "Pending" %}
-                            <p><b>Application Progress:</b></p>
+                        {% if user.supporter_status == "Pending" or user.supporter_status == "Approved" %}
                             <table class="table no-margin">
-                                <tr>
+                                <tr {% if user.supporter_membership.has_active_mandate %}class="alert-success"{% endif %}>
                                     <td>Direct Debit Mandate Created</td>
                                     <td>
                                         {% if user.supporter_membership.has_active_mandate %}
@@ -61,8 +60,8 @@
                                         {% endif %}
                                     </td>
                                 </tr>
-                                <tr>
-                                    <td>Approval Requested</td>
+                                <tr {% if user.supporter_membership.approval_request_count > 0 %}class="alert-success"{% endif %}>
+                                    <td>Application Submitted</td>
                                     <td>
                                         {% if user.supporter_membership.approval_request_count > 0 %}
                                             <span class="glyphicon glyphicon-ok-sign text-success" aria-hidden="true"></span>
@@ -73,42 +72,48 @@
                                         {% endif %}
                                     </td>
                                 </tr>
-                                <tr>
+                                <tr {% if user.supporter_membership.status == "Approved" %}class="alert-success"{% endif %}>
                                     <td>Application Approved</td>
                                     <td>
-                                        <span class="glyphicon glyphicon-question-sign text-warning" aria-hidden="true" data-toggle="tooltip" title="Your application is pending review by the Board"></span>
+                                        {% if user.supporter_membership.status == "Pending" %}
+                                            <span class="glyphicon glyphicon-question-sign text-warning" aria-hidden="true" data-toggle="tooltip" title="Your application is pending review by the Board"></span>
+                                        {% elif user.supporter_membership.status == "Approved" %}
+                                            <span class="glyphicon glyphicon-ok-sign text-success" aria-hidden="true"></span>
+                                        {% endif %}
                                     </td>
                                 </tr>
+
+                                <tr>
+                                    <td>Payment Received</td>
+                                    <td>
+                                        <span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true" data-toggle="tooltip" title="Payment not yet received"></span>
+                                    </td>
+                                </tr>
+
+<!---
+                                <h4>Payments</h4>
+                                <table class="table table-condensed no-margin">
+                                    <thead>
+                                        <tr style="background-color: #eee">
+                                            <th>Amount</th> <th>Charge Date</th> <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for payment in payments %}
+                                        <tr>
+                                            <td>&pound;{% widthratio payment.amount 100 1 %}</td>
+                                            <td>{{ payment.charge_date }}</td>
+                                            <td>{{ payment.status }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                --->
+
                             </table>
 
                         {% elif user.supporter_status == 'Rejected' %}
                             <p>Unfortunately, your application has been <b>rejected</b> by the Board - you should have received an email explaining the reason(s) for their decision.</p>
-
-                        {% elif user.supporter_status == 'Approved' %}
-                            <dl class="dl-horizontal">
-                                <dt>Membership Status</dt> <dd>Approved</dd>
-                                <dt>Subscription Fee</dt> <dd>&pound;{{ user.supporter_membership.fee }}</dd>
-                                <dt>Customer ID</dt> <dd></dd>
-                                <dt>Mandate ID</dt> <dd></dd>
-                            </dl>
-
-                            <h4>Payments</h4>
-                            <table class="table table-condensed no-margin">
-                                <thead>
-                                    <tr style="background-color: #eee">
-                                        <th>Amount</th> <th>Charge Date</th> <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for payment in payments %}
-                                    <tr>
-                                        <td>&pound;{% widthratio payment.amount 100 1 %}</td>
-                                        <td>{{ payment.charge_date }}</td>
-                                        <td>{{ payment.status }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
                         {% endif %}
 
                     {% endif %}

@@ -247,122 +247,37 @@ def supporter_approval(request, session_token, action):
         return redirect(reverse_lazy('index'))
 
     try:
-        # lookup user info based on key
-        user = User.objects.get(gocardless_session_token=session_token)
+        # lookup membership application based on session_token
+        ma = SupporterMembership.objects.get(session_token=session_token)
 
-        # check user has not already been approved/rejected (e.g. by someone else!)
-        if user.member_status != 'Pending':
-            messages.error(request, "Error - "+ user.first_name+" appears to have already been " + user.member_status, extra_tags='alert-danger')
-            return render(request, 'base.html')
-
-
-        # update user object
-        user.member_status = 'Approved' if action=='approve' else 'Rejected'
-
-        user.save()
-
-        # email user to notify of decision
-        htmly = get_template('join_supporter/supporter_decision_email.html')
-
-        d = Context({
-            'email': user.email,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'fee': user.member_fee,
-            'action': action
-        })
-
-        subject = "Hackspace Foundation Membership Application"
-        from_email = getattr(settings, "BOARD_EMAIL", None)
-        to = user.email
-        message = htmly.render(d)
-        try:
-            msg = EmailMessage(subject, message, to=[to], from_email=from_email)
-            msg.content_subtype = 'html'
-            msg.send()
-        except Exception as e:
-            # TODO: oh dear - how should we handle this gracefully?!?
-            logger.error("Error in supporter_approval - unable to send email: "+str(e), extra={'user':request.user})
-
-
-        # get gocardless client object
-        client = gocardless_pro.Client(
-            access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
-            environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
-        )
-
-        # if approved, request gocardless payment
+        # apply approval action
+        error = False
         if action == 'approve':
-
-
-            # generate idempotency key
-            key = uuid.uuid4().hex
-
-            try:
-                # create payment
-                payment = client.payments.create(
-                    params={
-                        "amount" : int(user.member_fee * 100), # convert to pence
-                        "currency" : "GBP",
-                        "links" : {
-                            "mandate": user.gocardless_mandate_id
-                        },
-                        "metadata": {
-                            "type":"SupporterSubscription"
-                            # TODO: decide if we want to add metadata to the payment
-                        }
-                    }, headers={
-                        'Idempotency-Key' : key
-                })
-
-                # Store payment object
-                payment.idempotency_key = key
-                obj = GocardlessPayment.objects.get_or_create_from_payload(payment)
-
-                # add user relationship to object
-                obj.user = user
-                obj.save()
-
-
-            except Exception as e:
-                logger.error("Error in supporter_approval - exception creating payment: "+repr(e), extra={'user':user})
-
-
-
-        # if rejected, then cancel mandate
+            error = ma.approve()
         else:
+            error = ma.reject()
 
-            try:
-                # cancel mandate
-                mandate = client.mandates.cancel(user.gocardless_mandate_id)
+        if error:
+            messages.error(request, "Error - "+ ma.user.first_name+" appears to have already been " + ma.status, extra_tags='alert-danger')
 
-
-                # reset gocardless info on user object
-                user.gocardless_mandate_id = '';
-                user.gocardless_customer_id = '';
-                user.gocardless_redirect_flow_id = '';
-
-                user.save()
-
-
-            except Exception as e:
-                logger.error("Error in supporter_approval - exception cancelling mandate: "+repr(e), extra={'user':request.user})
-
-
-        # make a context object for the template to render
+        # thank the approver/reviewer for their response
         context = {
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'email':user.email,
+            'first_name': ma.user.first_name,
+            'last_name': ma.user.last_name,
+            'email': ma.user.email,
             'action': ('approving' if action=='approve' else 'rejecting')
         }
         return render(request, 'join_supporter/supporter_approval.html', context)
 
-    except User.DoesNotExist as e:
-        # aargh - that's not right - redirect to home
-        logger.error("Error in supporter_approval - user does not exist: "+str(e), extra={'user':request.user})
-        return redirect(reverse_lazy('index'))
 
+    except:
+        # unknown/invalid membership application
+        logger.error("Error in supporter_approval - SupportMembership does not exist: "+str(e), extra={
+            'user':request.user,
+            'session_token': session_token,
+            'action': action
+        })
+        return redirect(reverse_lazy('index'))
 
 
 class Login(View):

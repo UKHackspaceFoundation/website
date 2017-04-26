@@ -1,7 +1,7 @@
 <p>Thankyou for your application for <b>Supporter Membership</b> to the Hackspace Foundation
 </p>
 
-{% if action == 'approve' %}
+{% if status == 'Approved' %}
     <p>We're pleased to inform you that your application has been <b>approved</b> - welcome aboard!</p>
 
     <p>We will now request payment of your annual subscription fee, &pound;{{ fee }}, via GoCardless - the payment should be withdrawn within 3-5 days.</p>
