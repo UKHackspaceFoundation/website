@@ -9,6 +9,7 @@ urlpatterns = [
     url(r'^$', views.index, name='index'),
     url(r'^edit-profile$', views.UserUpdate.as_view(), name='edit-profile'),
     url(r'^edit-space-profile$', views.SpaceUpdate.as_view(), name='edit-space-profile'),
+    url(r'^error$', views.error, name='error'),
     url(r'^foundation/(?P<path>.*)$', views.foundation, name='foundation'),
     url(r'^gitinfo$', views.gitinfo, name='gitinfo'),
     url(r'^profile$', views.profile, name='profile'),

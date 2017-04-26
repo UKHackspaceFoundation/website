@@ -393,7 +393,7 @@ class SupporterMembership(models.Model):
             'email': self.user.email,
             'first_name': self.user.first_name,
             'last_name': self.user.last_name,
-            'fee': self.user.member_fee,
+            'fee': self.fee,
             'status': self.status
         })
 
@@ -416,7 +416,7 @@ class SupporterMembership(models.Model):
     def approve(self):
 
         # check user has not already been approved/rejected (e.g. by someone else!)
-        if user.member_status != 'Pending':
+        if self.status != 'Pending':
             return False
 
         # update membership status
@@ -435,7 +435,7 @@ class SupporterMembership(models.Model):
     def reject(self):
 
         # check user has not already been approved/rejected (e.g. by someone else!)
-        if user.member_status != 'Pending':
+        if self.status != 'Pending':
             return False
 
         # update membership status

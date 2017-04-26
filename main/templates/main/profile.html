@@ -59,18 +59,22 @@
                                             <a href="{% url 'join_supporter_step2' %}" class="btn btn-primary btn-sm">Create</a>
                                         {% endif %}
                                     </td>
+                                    <td></td>
                                 </tr>
                                 <tr {% if user.supporter_membership.approval_request_count > 0 %}class="alert-success"{% endif %}>
                                     <td>Application Submitted</td>
-                                    <td>
-                                        {% if user.supporter_membership.approval_request_count > 0 %}
-                                            <span class="glyphicon glyphicon-ok-sign text-success" aria-hidden="true"></span>
-                                        {% else %}
-                                            <span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true"></span>
+                                    {% if user.supporter_membership.approval_request_count > 0 %}
+                                        <td><span class="glyphicon glyphicon-ok-sign text-success" aria-hidden="true"></span></td>
+                                        <td></td>
+                                    {% else %}
+                                        <td><span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true"></span></td>
 
+                                        <td>
                                             <a href="{% url 'join_supporter_step3' %}" class="btn btn-primary btn-sm">Send</a>
-                                        {% endif %}
-                                    </td>
+                                        </td>
+
+                                    {% endif %}
+
                                 </tr>
                                 <tr {% if user.supporter_membership.status == "Approved" %}class="alert-success"{% endif %}>
                                     <td>Application Approved</td>
@@ -81,6 +85,18 @@
                                             <span class="glyphicon glyphicon-ok-sign text-success" aria-hidden="true"></span>
                                         {% endif %}
                                     </td>
+                                    <td></td>
+                                </tr>
+
+                                <tr {% if user.supporter_membership.mandate.get_payments %}class="alert-success"{% endif %}>
+                                    <td>Payment Requested</td>
+                                    {% if user.supporter_membership.mandate.get_payments %}
+                                        <td><span class="glyphicon glyphicon-ok-sign text-success" aria-hidden="true" data-toggle="tooltip" title=""></span></td>
+
+                                        <td>&pound;{% widthratio user.supporter_membership.mandate.get_latest_payment.amount 100 1 %}</td>
+                                    {% else %}
+                                        <td><span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true" data-toggle="tooltip" title="Payment not yet requested"></span></td>
+                                    {% endif %}
                                 </tr>
 
                                 <tr>
@@ -88,6 +104,7 @@
                                     <td>
                                         <span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true" data-toggle="tooltip" title="Payment not yet received"></span>
                                     </td>
+                                    <td></td>
                                 </tr>
 
 <!---
@@ -114,6 +131,8 @@
 
                         {% elif user.supporter_status == 'Rejected' %}
                             <p>Unfortunately, your application has been <b>rejected</b> by the Board - you should have received an email explaining the reason(s) for their decision.</p>
+
+                            <a href="{% url 'join_supporter_step1' %}" class="btn btn-success">Apply Again</a>
                         {% endif %}
 
                     {% endif %}

@@ -32,6 +32,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def error(request):
+    return render(request, 'main/error.html')
+
+
 def index(request):
     activeSpaces = Space.objects.active_spaces()
     inactiveSpaces = Space.objects.inactive_spaces()
@@ -168,7 +172,7 @@ class JoinSupporterStep1(LoginRequiredMixin, CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         # if user already has an active membership then return to profile page
-        if request.user.supporter_status() != 'None':
+        if request.user.supporter_status() == 'Pending' or request.user.supporter_status() == 'Approved':
             messages.error(request, 'You already have an active membership', extra_tags='alert-danger')
             logger.error("Error in JoinSupporterStep1 - user has an existing membership", extra={'user':request.user})
             return redirect(reverse('profile'))
@@ -242,9 +246,9 @@ def join_supporter_step3(request):
 def supporter_approval(request, session_token, action):
 
     if action != 'approve' and action != 'reject':
-        # this shouldn't happen - just redirect to home
+        # this shouldn't happen
         logger.error("Error in supporter_approval - unexpected action: "+action, extra={'user':request.user})
-        return redirect(reverse_lazy('index'))
+        return redirect(reverse('error'))
 
     try:
         # lookup membership application based on session_token
@@ -253,12 +257,13 @@ def supporter_approval(request, session_token, action):
         # apply approval action
         error = False
         if action == 'approve':
-            error = ma.approve()
+            error = not ma.approve()
         else:
-            error = ma.reject()
+            error = not ma.reject()
 
         if error:
             messages.error(request, "Error - "+ ma.user.first_name+" appears to have already been " + ma.status, extra_tags='alert-danger')
+            return redirect(reverse('error'))
 
         # thank the approver/reviewer for their response
         context = {
@@ -270,14 +275,15 @@ def supporter_approval(request, session_token, action):
         return render(request, 'join_supporter/supporter_approval.html', context)
 
 
-    except:
+    except Exception as e:
         # unknown/invalid membership application
-        logger.error("Error in supporter_approval - SupportMembership does not exist: "+str(e), extra={
+        logger.error("Error in supporter_approval - "+str(e), extra={
             'user':request.user,
             'session_token': session_token,
             'action': action
         })
-        return redirect(reverse_lazy('index'))
+        messages.error(request, "Error in supporter_approval - "+str(e), extra_tags='alert-danger')
+        return redirect(reverse('error'))
 
 
 class Login(View):
