@@ -30,7 +30,7 @@ class GocardlessPaymentManager(models.Manager):
     def get_or_create_from_payload(self, payload, mandate):
         try:
             # create with required fields only
-            obj, created = super(GocardlessPaymentManger, self).get_or_create(
+            obj, created = super(GocardlessPaymentManager, self).get_or_create(
                 id = payload.id,
                 created_at = timezone.now(),
                 amount = payload.amount,
