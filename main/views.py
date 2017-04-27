@@ -2,15 +2,17 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.views import View
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 import json
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.edit import CreateView
 from .models import Space, SupporterMembership, GocardlessMandate, GocardlessPayment
 from .forms import CustomUserCreationForm, SupporterMembershipForm, NewSpaceForm
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils.decorators import method_decorator
 import requests
 import markdown
 from urllib.parse import urljoin
@@ -26,6 +28,9 @@ from django.core.mail import EmailMessage
 from django.template.loader import get_template
 from django.template import Context
 import logging
+import hmac
+import hashlib
+import os
 
 
 # get instance of a logger
@@ -483,3 +488,50 @@ def github_browser(request, settings, path):
         'subtitle': settings['subtitle']
     }
     return render(request, 'main/github_browser.html', context)
+
+
+# Handle Gocardless Webhook messages
+class GocardlessWebhook(View):
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super(GocardlessWebhook, self).dispatch(*args, **kwargs)
+
+    def is_valid_signature(self, request):
+        secret = bytes(getattr(settings, "MAPBOX_ACCESS_TOKEN", None), 'utf-8')
+        computed_signature = hmac.new(
+            secret, request.body, hashlib.sha256).hexdigest()
+        provided_signature = request.META["HTTP_WEBHOOK_SIGNATURE"]
+        # In flask, access the webhook signature header with
+        # request.headers.get('Webhook-Signature')
+        return hmac.compare_digest(provided_signature, computed_signature)
+
+    def post(self, request, *args, **kwargs):
+        if self.is_valid_signature(request):
+            response = HttpResponse()
+            payload = json.loads(request.body.decode('utf-8'))
+            # Each webhook may contain multiple events to handle, batched together.
+            for event in payload['events']:
+                self.process(event, response)
+            return response
+        else:
+            return HttpResponse(498)
+
+    def process(self, event, response):
+        response.write("Processing event {}\n".format(event['id']))
+        if event['resource_type'] == 'mandates':
+            return self.process_mandates(event, response)
+        # ... Handle other resource types
+        else:
+            response.write("Don't know how to process an event with \
+                resource_type {}\n".format(event['resource_type']))
+            return response
+
+    def process_mandates(self, event, response):
+        if event['action'] == 'cancelled':
+            response.write("Mandate {} has been \
+                cancelled\n".format(event['links']['mandate']))
+        # ... Handle other mandate actions
+        else:
+            response.write("Don't know how to process an event with \
+                resource_type {}\n".format(event['resource_type']))
+        return response

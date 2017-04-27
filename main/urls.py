@@ -12,6 +12,7 @@ urlpatterns = [
     url(r'^error$', views.error, name='error'),
     url(r'^foundation/(?P<path>.*)$', views.foundation, name='foundation'),
     url(r'^gitinfo$', views.gitinfo, name='gitinfo'),
+    url(r'^gocardless-webhook$', views.GocardlessWebhook.as_view(), name='gocardless-webhook'),
     url(r'^profile$', views.profile, name='profile'),
     url(r'^import_spaces$', views.import_spaces, name='import_spaces'),
     url(r'^join$', views.join, name='join'),
