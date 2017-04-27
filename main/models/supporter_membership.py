@@ -10,6 +10,7 @@ from django.utils.translation import gettext_lazy as _
 import gocardless_pro
 import logging
 import uuid
+from .gocardless_mandate import GocardlessMandate
 
 # get instance of a logger
 logger = logging.getLogger(__name__)
@@ -73,6 +74,8 @@ class SupporterMembership(models.Model):
 
     class Meta:
         ordering = ["created_at"]
+        db_table = 'main_SupporterMembership'
+        app_label = 'main'
 
     def __str__(self):
         return self.user.name() + ' - ' + self.created_at.strftime('%Y-%m-%d')

@@ -10,6 +10,7 @@ from django.utils.translation import gettext_lazy as _
 import gocardless_pro
 import logging
 import uuid
+from .gocardless_payment import GocardlessPayment
 
 # get instance of a logger
 logger = logging.getLogger(__name__)
@@ -83,6 +84,10 @@ class GocardlessMandate(models.Model):
 
     # override default manager
     objects = GocardlessMandateManager()
+
+    class Meta:
+        db_table = 'main_GocardlessMandate'
+        app_label = 'main'
 
     # is_supporter_mandate
     def is_supporter_mandate(self):

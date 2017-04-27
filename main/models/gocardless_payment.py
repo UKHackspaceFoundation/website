@@ -77,3 +77,7 @@ class GocardlessPayment(models.Model):
     space = models.ForeignKey('Space', models.SET_NULL, blank=True, null=True)
 
     objects = GocardlessPaymentManager()
+
+    class Meta:
+        db_table = 'main_GocardlessPayment'
+        app_label = 'main'

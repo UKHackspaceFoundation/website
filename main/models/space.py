@@ -10,6 +10,7 @@ from django.utils.translation import gettext_lazy as _
 import gocardless_pro
 import logging
 import uuid
+from .user import User
 
 # get instance of a logger
 logger = logging.getLogger(__name__)
@@ -75,6 +76,8 @@ class Space(models.Model):
 
     class Meta:
         ordering = ["name"]
+        db_table = 'main_Space'
+        app_label = 'main'
 
     def publish(self):
         self.changed_date = timezone.now()

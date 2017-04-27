@@ -10,6 +10,7 @@ from django.utils.translation import gettext_lazy as _
 import gocardless_pro
 import logging
 import uuid
+from .supporter_membership import SupporterMembership
 
 # get instance of a logger
 logger = logging.getLogger(__name__)
@@ -87,6 +88,8 @@ class User(AbstractUser):
     class Meta:
         # set default ordering to be on first_name
         ordering = ["first_name"]
+        db_table = 'main_User'
+        app_label = 'main'
 
     def name(self):
         return self.first_name + ' ' + self.last_name
@@ -106,19 +109,3 @@ class User(AbstractUser):
     # get latest membership record for this user
     def supporter_membership(self):
         return SupporterMembership.objects.get_membership(self)
-
-    def sync_payments(self):
-        # get gocardless client object
-        client = gocardless_pro.Client(
-            access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
-            environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
-        )
-
-        # fetch associated gocardless payments
-        try:
-            payments = client.payments.list(params={"customer": self.gocardless_customer_id}).records
-
-            # TODO: sync payments with database
-
-        except Exception as e:
-            logger.error("Error in sync_payments - exception retrieving payments: " + repr(e), extra={'user':self})
