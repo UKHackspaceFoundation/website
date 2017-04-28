@@ -57,6 +57,48 @@ class GocardlessPaymentManager(models.Manager):
             logger.error("Error in GocardlessPaymentManager.get_or_create_from_payload - exception creating payment: " + repr(e), extra={'payload':payload})
             return None
 
+    def process_payment_from_webhook(self, event, response):
+        # best to ignore the event itself and just fetch latest status via the api
+        # this is in case the webhook event is received out of order
+
+        client = get_gocardless_client()
+
+        # get latest payment info from api
+        try:
+            info = client.payments.get()
+
+            # get matching payment object from DB
+            try:
+                payment = client.payments.get(event['id'])
+
+                # compare status of info vs payment...  act on any differences
+                if info['status'] != payment.status:
+                    pass
+
+                else:
+                    # doesn't look like anything has changed
+                    pass
+
+            except GocardlessPayment.DoesNotExist as e:
+                # odd...  best to create a matching payment record for consistency
+
+                # see if we have a matching mandate object:
+                mandate = None
+                try:
+                    mandate = GocardlessMandate.objects.get(id=info['links']['mandate'])
+                except GocardlessMandate.DoesNotExist as e:
+                    pass
+
+                # create the payment record
+                self.get_or_create_from_payload(info, mandate)
+                pass
+
+        except Exception as e:
+            # odd - this should always be possible, perhaps there was a connection error
+            pass
+
+        return response
+
 
 class GocardlessPayment(models.Model):
     id = models.CharField(max_length=16, unique=True, primary_key=True)

@@ -497,7 +497,7 @@ class GocardlessWebhook(View):
         return super(GocardlessWebhook, self).dispatch(*args, **kwargs)
 
     def is_valid_signature(self, request):
-        secret = bytes(getattr(settings, "MAPBOX_ACCESS_TOKEN", None), 'utf-8')
+        secret = bytes(getattr(settings, "GOCARDLESS_WEBHOOK_SECRET", None), 'utf-8')
         computed_signature = hmac.new(
             secret, request.body, hashlib.sha256).hexdigest()
         provided_signature = request.META["HTTP_WEBHOOK_SIGNATURE"]
@@ -520,18 +520,18 @@ class GocardlessWebhook(View):
         response.write("Processing event {}\n".format(event['id']))
         if event['resource_type'] == 'mandates':
             return self.process_mandates(event, response)
-        # ... Handle other resource types
+        elif event['resource_type'] == 'payments':
+            return self.process_payments(event, response)
+            return GocardlessPaymentManager.process_payment_from_webhook(event, response)
         else:
-            response.write("Don't know how to process an event with \
-                resource_type {}\n".format(event['resource_type']))
+            response.write("Don't know how to process an event with resource_type {}\n".format(event['resource_type']))
             return response
 
     def process_mandates(self, event, response):
+        # TODO: do something useful with mandate events!
         if event['action'] == 'cancelled':
-            response.write("Mandate {} has been \
-                cancelled\n".format(event['links']['mandate']))
+            response.write("Mandate {} has been cancelled\n".format(event['links']['mandate']))
         # ... Handle other mandate actions
         else:
-            response.write("Don't know how to process an event with \
-                resource_type {}\n".format(event['resource_type']))
+            response.write("Don't know how to process an event with resource_type {}\n".format(event['resource_type']))
         return response
