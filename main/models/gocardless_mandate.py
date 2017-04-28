@@ -86,7 +86,7 @@ class GocardlessMandate(models.Model):
     objects = GocardlessMandateManager()
 
     class Meta:
-        db_table = 'main_GocardlessMandate'
+        db_table = 'gocardlessmandate'
         app_label = 'main'
 
     # is_supporter_mandate
@@ -129,6 +129,9 @@ class GocardlessMandate(models.Model):
 
 
     def create_payment(self, amount):
+        if not self.is_active():
+            raise RuntimeError("Request to create_payment for an inactive mandate");
+
         # get gocardless client object
         client = get_gocardless_client()
 

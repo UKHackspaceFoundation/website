@@ -115,11 +115,9 @@ class GocardlessPayment(models.Model):
     payout_id = models.CharField(max_length=16, blank=True)
     idempotency_key = models.CharField(max_length=33, blank=True)
     mandate = models.ForeignKey('GocardlessMandate', models.SET_NULL, blank=True, null=True)
-    user = models.ForeignKey('User', models.SET_NULL, blank=True, null=True)
-    space = models.ForeignKey('Space', models.SET_NULL, blank=True, null=True)
 
     objects = GocardlessPaymentManager()
 
     class Meta:
-        db_table = 'main_GocardlessPayment'
+        db_table = 'gocardlesspayment'
         app_label = 'main'

@@ -291,6 +291,25 @@ def supporter_approval(request, session_token, action):
         return redirect(reverse('error'))
 
 
+@login_required
+def supporter_membership_payment(request):
+    # request new payment and return to profile
+
+    try:
+        # lookup membership application based on session_token
+        ma = SupporterMembership.objects.get_membership(request.user)
+
+        # attempt to request new payment
+        ma.request_payment();
+
+        messages.info(request, "Payment requested", extra_tags='alert-success')
+
+    except Exception as e:
+        messages.error(request, "Error in supporter_approval - "+str(e), extra_tags='alert-danger')
+
+    return redirect(reverse('profile'))
+
+
 class Login(View):
     def get(self, request):
         return render(request, 'main/login.html')
@@ -521,8 +540,7 @@ class GocardlessWebhook(View):
         if event['resource_type'] == 'mandates':
             return self.process_mandates(event, response)
         elif event['resource_type'] == 'payments':
-            return self.process_payments(event, response)
-            return GocardlessPaymentManager.process_payment_from_webhook(event, response)
+            return GocardlessPayment.objects.process_payment_from_webhook(event, response)
         else:
             response.write("Don't know how to process an event with resource_type {}\n".format(event['resource_type']))
             return response

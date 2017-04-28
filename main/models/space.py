@@ -76,7 +76,7 @@ class Space(models.Model):
 
     class Meta:
         ordering = ["name"]
-        db_table = 'main_Space'
+        db_table = 'space'
         app_label = 'main'
 
     def publish(self):

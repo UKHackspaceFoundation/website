@@ -88,7 +88,7 @@ class User(AbstractUser):
     class Meta:
         # set default ordering to be on first_name
         ordering = ["first_name"]
-        db_table = 'main_User'
+        db_table = 'user'
         app_label = 'main'
 
     def name(self):

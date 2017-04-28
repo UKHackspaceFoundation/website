@@ -28,6 +28,7 @@ urlpatterns = [
     url(r'^spaces.json$', views.spaces, name='spaces'),
     url(r'^spaces.geojson$', views.geojson, name='geojson'),
     url(r'^space_detail$', views.space_detail, name='space_detail'),
+    url(r'^supporter-membership-payment$', views.supporter_membership_payment, name='supporter-membership-payment'),
 
     url(r'^signup-done/$', authviews.password_reset_done, {
         'template_name': 'signup/signup_done.html',

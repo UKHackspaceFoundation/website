@@ -96,6 +96,12 @@
                                         <td>&pound;{% widthratio user.supporter_membership.mandate.get_latest_payment.amount 100 1 %}</td>
                                     {% else %}
                                         <td><span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true" data-toggle="tooltip" title="Payment not yet requested"></span></td>
+
+                                        {% if user.supporter_membership.status == "Approved"%}
+                                            <td>
+                                                <a href="{% url 'supporter-membership-payment' %}" class="btn btn-danger btn-sm">Resend</a>
+                                            </td>
+                                        {% endif %}
                                     {% endif %}
                                 </tr>
 

@@ -74,7 +74,7 @@ class SupporterMembership(models.Model):
 
     class Meta:
         ordering = ["created_at"]
-        db_table = 'main_SupporterMembership'
+        db_table = 'supportermembership'
         app_label = 'main'
 
     def __str__(self):
@@ -231,8 +231,7 @@ class SupporterMembership(models.Model):
 
         self.send_application_decision()
 
-        if self.has_active_mandate():
-            return self.mandate().create_payment(self.fee)
+        self.request_payment()
 
         return True
 
@@ -254,6 +253,12 @@ class SupporterMembership(models.Model):
             return self.mandate().cancel()
 
         return True
+
+
+    # request new payment for this membership (e.g. start of a new year)
+    def request_payment(self):
+        if self.has_active_mandate():
+            return self.mandate().create_payment(self.fee)
 
 
     # TODO: update started_at when first payment received
