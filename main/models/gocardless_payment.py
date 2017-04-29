@@ -78,21 +78,13 @@ class GocardlessPaymentManager(models.Manager):
                 # save changes to object - this will also trigger internal handling
                 payment.status = info.status
                 payment.charge_date = info.charge_date
+                payment.description = event['details']['description']
                 payment.save()
 
             except GocardlessPayment.DoesNotExist as e:
-                # odd...  best to create a matching payment record for consistency
-                logger.warning("Warning in GocardlessPaymentManager.process_payment_from_webhook - payment object not found: " + repr(e), extra={'event':event})
-
-                # see if we have a matching mandate object:
-                mandate = None
-                try:
-                    mandate = GocardlessMandate.objects.get(id=info['links']['mandate'])
-                except GocardlessMandate.DoesNotExist as e:
-                    logger.warning("Warning in GocardlessPaymentManager.process_payment_from_webhook - mandate object not found: " + repr(e), extra={'event':event})
-
-                # create the payment record
-                self.get_or_create_from_payload(info, mandate)
+                # odd...  log error
+                # TODO: perhaps email admin to flag issue
+                logger.error("Error in GocardlessPaymentManager.process_payment_from_webhook - payment object not found: " + repr(e), extra={'event':event})
 
 
         except Exception as e:
@@ -108,7 +100,7 @@ class GocardlessPayment(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     charge_date = models.DateField(default=timezone.now, blank=True)
     amount = models.IntegerField(default=0)
-    description = models.CharField(max_length=100, blank=True)
+    description = models.CharField(max_length=100, blank=True, null=True)
     currency = models.CharField(max_length=10)
     status = models.CharField(max_length=26)
     amount_refunded = models.IntegerField(default=0)
@@ -132,7 +124,7 @@ class GocardlessPayment(models.Model):
         super(GocardlessPayment, self).__init__(*args, **kwargs)
         self.old_status = self.status
 
-    def save(self, force_insert=False, force_update=False):
+    def save(self, force_insert=False, force_update=False, using=None):
         if self.status != self.old_status:
             # status has changed...  so need to act on it:
             if self.status == 'paid_out':
@@ -144,5 +136,5 @@ class GocardlessPayment(models.Model):
                 self.mandate.handle_payment_updated(self)
 
 
-        super(GocardlessPayment, self).save(force_insert, force_update)
+        super(GocardlessPayment, self).save(force_insert, force_update, using)
         self.old_status = self.status

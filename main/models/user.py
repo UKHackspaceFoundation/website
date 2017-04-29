@@ -109,3 +109,7 @@ class User(AbstractUser):
     # get latest membership record for this user
     def supporter_membership(self):
         return SupporterMembership.objects.get_membership(self)
+
+    # get all membership records for this user
+    def supporter_memberships(self):
+        return SupporterMembership.objects.get_memberships(self)

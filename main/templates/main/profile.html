@@ -48,7 +48,7 @@
 
                         {% if user.supporter_status == "Pending" or user.supporter_status == "Approved" %}
 
-                            <table class="table no-margin">
+                            <table class="table">
                                 <tr {% if user.supporter_membership.has_active_mandate %}class="alert-success"{% endif %}>
                                     <td>Direct Debit Mandate Created</td>
                                     <td>
@@ -89,14 +89,14 @@
                                     <td></td>
                                 </tr>
 
-                                <tr {% if user.supporter_membership.mandate.get_payments %}class="alert-success"{% endif %}>
+                                <tr {% if user.supporter_membership.mandate.payment.status != "failed" %}class="alert-success"{% endif %}>
                                     <td>Payment Requested</td>
-                                    {% if user.supporter_membership.mandate.get_payments %}
+                                    {% if user.supporter_membership.mandate.payments and user.supporter_membership.mandate.payment.status != 'failed' %}
                                         <td><span class="glyphicon glyphicon-ok-sign text-success" aria-hidden="true" data-toggle="tooltip" title=""></span></td>
 
-                                        <td>&pound;{% widthratio user.supporter_membership.mandate.get_latest_payment.amount 100 1 %} on {{ user.supporter_membership.mandate.get_latest_payment.charge_date }}</td>
+                                        <td>&pound;{% widthratio user.supporter_membership.mandate.payment.amount 100 1 %} on {{ user.supporter_membership.mandate.payment.charge_date }}</td>
                                     {% else %}
-                                        <td><span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true" data-toggle="tooltip" title="Payment not yet requested"></span></td>
+                                        <td><span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true" data-toggle="tooltip" title="Payment not yet requested or failed"></span></td>
 
                                         {% if user.supporter_membership.status == "Approved"%}
                                             <td>
@@ -106,13 +106,21 @@
                                     {% endif %}
                                 </tr>
 
-                                <tr {% if user.supporter_membership.mandate.get_latest_payment.status == "paid_out" %}class="alert-success"{% endif %}>
+                                {% if user.supporter_membership.mandate.payments and user.supporter_membership.mandate.payment.status == 'failed' %}
+                                <tr>
+                                    <td colspan="3">
+                                        <div class="alert alert-danger no-margin">Payment failed - please check you have sufficient funds in your account and try again</div>
+                                    </td>
+                                </tr>
+                                {% endif %}
+
+                                <tr {% if user.supporter_membership.mandate.payment.status == "paid_out" %}class="alert-success"{% endif %}>
                                     <td>Payment Received</td>
-                                    {% if user.supporter_membership.mandate.get_latest_payment.status == "paid_out" %}
+                                    {% if user.supporter_membership.mandate.payment.status == "paid_out" %}
                                         <td>
                                             <span class="glyphicon glyphicon-ok-sign text-success" aria-hidden="true" data-toggle="tooltip" title="Payment received"></span>
                                         </td>
-                                        <td>{{ user.supporter_membership.mandate.get_latest_payment.payout_date }}</td>
+                                        <td>{{ user.supporter_membership.mandate.payment.payout_date }}</td>
                                     {% else %}
                                         <td>
                                             <span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true" data-toggle="tooltip" title="Payment not yet received"></span>
@@ -151,6 +159,10 @@
                                 --->
 
                             </table>
+
+                            {% if user.supporter_membership.status == "Approved"%}
+                            <p class="no-margin"><a href="{% url 'payment-history' %}" class="btn btn-primary">Payment History</a></p>
+                            {% endif %}
 
                         {% elif user.supporter_status == 'Rejected' %}
                             <p>Unfortunately, your application has been <b>rejected</b> by the Board - you should have received an email explaining the reason(s) for their decision.</p>

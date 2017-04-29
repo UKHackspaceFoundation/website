@@ -27,12 +27,12 @@ def get_gocardless_client():
 class GocardlessMandateManager(models.Manager):
 
     # get all mandate records for supporter membership
-    def get_mandate_history_for_supporter_membership(self, supporter_membership):
+    def get_mandates_for_supporter_membership(self, supporter_membership):
         return super(GocardlessMandateManager, self).get_queryset().filter(supporter_membership=supporter_membership)
 
     # get latest mandate for supporter_membership
     def get_mandate_for_supporter_membership(self, supporter_membership):
-        return self.get_mandate_history_for_supporter_membership(supporter_membership).latest('created_at')
+        return self.get_mandates_for_supporter_membership(supporter_membership).latest('created_at')
 
     # get latest mandate status for supporter_membership or throw DoesNotExist
     def get_membership_status_for_supporter_membership(self, supporter_membership):
@@ -172,13 +172,13 @@ class GocardlessMandate(models.Model):
 
 
     # Get associated payments
-    def get_payments(self):
+    def payments(self):
         return GocardlessPayment.objects.filter(mandate=self)
 
 
     # Get latest payment (will throw DoesNotExist exception if none)
-    def get_latest_payment(self):
-        return self.get_payments().latest('created_at')
+    def payment(self):
+        return self.payments().latest('created_at')
 
 
     def create_payment(self, amount):

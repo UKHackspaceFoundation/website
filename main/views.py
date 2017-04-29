@@ -313,6 +313,13 @@ def supporter_membership_payment(request):
 
     return redirect(reverse('profile'))
 
+@login_required
+def payment_history(request):
+    # show detailed payment history for logged in user
+
+
+    return render(request, 'main/payment_history.html')
+
 
 class Login(View):
     def get(self, request):

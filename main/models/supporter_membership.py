@@ -27,12 +27,12 @@ def get_gocardless_client():
 
 class SupporterMembershipManager(models.Manager):
     # get all membership records for user
-    def get_membership_history(self, user):
+    def get_memberships(self, user):
         return super(SupporterMembershipManager, self).get_queryset().filter(user=user)
 
     # get latest membership for user
     def get_membership(self, user):
-        return self.get_membership_history(user).latest('created_at')
+        return self.get_memberships(user).latest('created_at')
 
     # get latest membership status for user
     def get_membership_status(self, user):
@@ -97,6 +97,10 @@ class SupporterMembership(models.Model):
     # get mandate status or throw DoesNotExist
     def mandate_status(self):
         return self.mandate().status
+
+    # get all mandate records for this supporter membership
+    def mandates(self):
+        return GocardlessMandate.objects.get_mandates_for_supporter_membership(self)
 
     # get latest mandate record for this supporter membership
     def mandate(self):
@@ -292,6 +296,3 @@ class SupporterMembership(models.Model):
     def handle_mandate_updated(self, mandate):
         # TODO: something useful
         pass
-
-
-    # TODO: get associated mandates

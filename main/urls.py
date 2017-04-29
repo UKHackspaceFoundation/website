@@ -22,6 +22,7 @@ urlpatterns = [
     url(r'^supporter-approval/(?P<session_token>.*)/(?P<action>.*)$', views.supporter_approval, name='supporter-approval'),
     url(r'^login$', views.Login.as_view(), name='login'),
     url(r'^logout$', views.logout_view, name='logout'),
+    url(r'^payment-history$', views.payment_history, name='payment-history'),
     url(r'^new-space$', views.new_space, name='new_space'),
     url(r'^resources/(?P<path>.*)$', views.resources, name='resources'),
     url(r'^signup$', views.SignupView.as_view(), name='signup'),
