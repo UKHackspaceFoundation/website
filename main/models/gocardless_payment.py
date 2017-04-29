@@ -13,7 +13,7 @@ import uuid
 
 # get instance of a logger
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.INFO)
 
 # utility functions:
 def get_gocardless_client():
@@ -61,41 +61,44 @@ class GocardlessPaymentManager(models.Manager):
         # best to ignore the event itself and just fetch latest status via the api
         # this is in case the webhook event is received out of order
 
+        logger.info("Processing payment id:{}".format(event['links']['payment']))
+
         client = get_gocardless_client()
 
         # get latest payment info from api
         try:
-            info = client.payments.get()
+            info = client.payments.get(event['links']['payment'])
 
             # get matching payment object from DB
             try:
-                payment = client.payments.get(event['id'])
+                payment = super(GocardlessPaymentManager, self).get_queryset().get(id=event['links']['payment'])
 
-                # compare status of info vs payment...  act on any differences
-                if info['status'] != payment.status:
-                    pass
+                print(repr(info))
 
-                else:
-                    # doesn't look like anything has changed
-                    pass
+                # save changes to object - this will also trigger internal handling
+                payment.status = info.status
+                payment.charge_date = info.charge_date
+                payment.save()
 
             except GocardlessPayment.DoesNotExist as e:
                 # odd...  best to create a matching payment record for consistency
+                logger.warning("Warning in GocardlessPaymentManager.process_payment_from_webhook - payment object not found: " + repr(e), extra={'event':event})
 
                 # see if we have a matching mandate object:
                 mandate = None
                 try:
                     mandate = GocardlessMandate.objects.get(id=info['links']['mandate'])
                 except GocardlessMandate.DoesNotExist as e:
-                    pass
+                    logger.warning("Warning in GocardlessPaymentManager.process_payment_from_webhook - mandate object not found: " + repr(e), extra={'event':event})
 
                 # create the payment record
                 self.get_or_create_from_payload(info, mandate)
-                pass
+
 
         except Exception as e:
             # odd - this should always be possible, perhaps there was a connection error
-            pass
+            logger.error("Error in GocardlessPaymentManager.process_payment_from_webhook - exception fetching payment info: " + repr(e), extra={'event':event})
+
 
         return response
 
@@ -121,3 +124,19 @@ class GocardlessPayment(models.Model):
     class Meta:
         db_table = 'gocardlesspayment'
         app_label = 'main'
+
+    def __init__(self, *args, **kwargs):
+        super(GocardlessPayment, self).__init__(*args, **kwargs)
+        self.old_status = self.status
+
+    def save(self, force_insert=False, force_update=False):
+        if self.status != self.old_status:
+            # status has changed...  so need to act on it:
+
+            # bubble status change event up to mandate
+
+            pass
+
+
+        super(GocardlessPayment, self).save(force_insert, force_update)
+        self.old_status = self.status

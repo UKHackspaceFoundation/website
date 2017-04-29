@@ -93,7 +93,7 @@
                                     {% if user.supporter_membership.mandate.get_payments %}
                                         <td><span class="glyphicon glyphicon-ok-sign text-success" aria-hidden="true" data-toggle="tooltip" title=""></span></td>
 
-                                        <td>&pound;{% widthratio user.supporter_membership.mandate.get_latest_payment.amount 100 1 %}</td>
+                                        <td>&pound;{% widthratio user.supporter_membership.mandate.get_latest_payment.amount 100 1 %} on {{ user.supporter_membership.mandate.get_latest_payment.charge_date }}</td>
                                     {% else %}
                                         <td><span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true" data-toggle="tooltip" title="Payment not yet requested"></span></td>
 
@@ -105,12 +105,19 @@
                                     {% endif %}
                                 </tr>
 
-                                <tr>
+                                <tr {% if user.supporter_membership.mandate.get_latest_payment.status == "paid_out" %}class="alert-success"{% endif %}>
                                     <td>Payment Received</td>
-                                    <td>
-                                        <span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true" data-toggle="tooltip" title="Payment not yet received"></span>
-                                    </td>
-                                    <td></td>
+                                    {% if user.supporter_membership.mandate.get_latest_payment.status == "paid_out" %}
+                                        <td>
+                                            <span class="glyphicon glyphicon-ok-sign text-success" aria-hidden="true" data-toggle="tooltip" title="Payment received"></span>
+                                        </td>
+                                        <td>{{ user.supporter_membership.mandate.get_latest_payment.payout_date }}</td>
+                                    {% else %}
+                                        <td>
+                                            <span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true" data-toggle="tooltip" title="Payment not yet received"></span>
+                                        </td>
+                                        <td></td>
+                                    {% endif %}
                                 </tr>
 
 <!---

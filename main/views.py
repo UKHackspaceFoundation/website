@@ -35,6 +35,7 @@ import os
 
 # get instance of a logger
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def error(request):
@@ -536,7 +537,9 @@ class GocardlessWebhook(View):
             return HttpResponse(498)
 
     def process(self, event, response):
-        response.write("Processing event {}\n".format(event['id']))
+        msg = "Processing event id:{}, resource_type:{}\n".format(event['id'], event['resource_type'])
+        response.write(msg)
+        logger.info(msg)
         if event['resource_type'] == 'mandates':
             return self.process_mandates(event, response)
         elif event['resource_type'] == 'payments':
