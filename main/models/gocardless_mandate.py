@@ -123,6 +123,9 @@ class GocardlessMandate(models.Model):
         db_table = 'gocardlessmandate'
         app_label = 'main'
 
+    def __str__(self):
+        return '{} - {} - {}'.format(self.id,  self.status, self.created_at.strftime('%Y-%m-%d'))
+
     def __init__(self, *args, **kwargs):
         super(GocardlessMandate, self).__init__(*args, **kwargs)
         self.old_status = self.status

@@ -79,7 +79,7 @@ class SupporterMembership(models.Model):
         app_label = 'main'
 
     def __str__(self):
-        return self.user.name() + ' - ' + self.created_at.strftime('%Y-%m-%d')
+        return '{} - {} - {}'.format(self.user.name(),  self.status, self.created_at.strftime('%Y-%m-%d'))
 
     def is_active(self):
         if self.expired_at is not None:

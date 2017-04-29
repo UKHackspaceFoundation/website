@@ -125,6 +125,9 @@ class GocardlessPayment(models.Model):
         db_table = 'gocardlesspayment'
         app_label = 'main'
 
+    def __str__(self):
+        return '{} - {} - {}'.format(self.id,  self.status, self.created_at.strftime('%Y-%m-%d'))
+
     def __init__(self, *args, **kwargs):
         super(GocardlessPayment, self).__init__(*args, **kwargs)
         self.old_status = self.status
