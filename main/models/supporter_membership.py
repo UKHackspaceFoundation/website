@@ -136,6 +136,7 @@ class SupporterMembership(models.Model):
         client = get_gocardless_client()
 
         # try to complete the redirect flow
+        logger.info("Completing redirect flow")
         redirect_flow = client.redirect_flows.complete(
             request.GET.get('redirect_flow_id', ''),
             params = {
@@ -144,9 +145,11 @@ class SupporterMembership(models.Model):
         )
 
         # fetch the detailed mandate info
+        logger.info("Fetch detailed mandate info")
         mandate_detail = client.mandates.get( redirect_flow.links.mandate )
 
         # create new mandate object
+        logger.info("Create new mandate object")
         mandate = GocardlessMandate(
             id = redirect_flow.links.mandate,
             supporter_membership = self,
@@ -158,6 +161,7 @@ class SupporterMembership(models.Model):
         )
         mandate.save()
 
+        logger.info("Mandate object created: {}".format(mandate.id))
         return mandate
 
     # send approval request email
@@ -283,6 +287,11 @@ class SupporterMembership(models.Model):
             logger.error("handle_payment_received - payout_date is null")
 
         # TODO: send notification email of payment received and membership active
+
+
+    def handle_mandate_updated(self, mandate):
+        # TODO: something useful
+        pass
 
 
     # TODO: get associated mandates

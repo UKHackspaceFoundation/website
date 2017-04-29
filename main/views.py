@@ -230,12 +230,15 @@ def join_supporter_step3(request):
         try:
             # see if the application already has a mandate
             mandate = ma.mandate()
+            logger.info("Found existing mandate: {}".format(mandate.id))
 
         except GocardlessMandate.DoesNotExist as e:
             # if not, complete the flow and create a new mandate record
+            logger.info("No existing mandate, completing redirect flow")
             mandate = ma.complete_redirect_flow(request)
 
         # now do the email approval stuff
+        logger.info("Sending approval request email")
         ma.send_approval_request(request)
 
         # finally, render the completion page
@@ -541,18 +544,9 @@ class GocardlessWebhook(View):
         response.write(msg)
         logger.info(msg)
         if event['resource_type'] == 'mandates':
-            return self.process_mandates(event, response)
+            return GocardlessMandate.objects.process_mandate_from_webhook(event, response)
         elif event['resource_type'] == 'payments':
             return GocardlessPayment.objects.process_payment_from_webhook(event, response)
         else:
             response.write("Don't know how to process an event with resource_type {}\n".format(event['resource_type']))
             return response
-
-    def process_mandates(self, event, response):
-        # TODO: do something useful with mandate events!
-        if event['action'] == 'cancelled':
-            response.write("Mandate {} has been cancelled\n".format(event['links']['mandate']))
-        # ... Handle other mandate actions
-        else:
-            response.write("Don't know how to process an event with resource_type {}\n".format(event['resource_type']))
-        return response

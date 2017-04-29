@@ -69,6 +69,40 @@ class GocardlessMandateManager(models.Manager):
             return None
 
 
+    def process_mandate_from_webhook(self, event, response):
+        # best to ignore the event itself and just fetch latest status via the api
+        # this is in case the webhook event is received out of order
+
+        logger.info("Processing mandate id:{}".format(event['links']['mandate']))
+
+        client = get_gocardless_client()
+
+        # get latest mandate info from api
+        try:
+            info = client.mandates.get(event['links']['mandate'])
+
+            # get matching mandate object from DB
+            try:
+                mandate = super(GocardlessMandateManager, self).get_queryset().get(id=event['links']['mandate'])
+
+                # save changes to object - this will also trigger internal handling
+                mandate.status = info.status
+                mandate.save()
+
+            except GocardlessMandate.DoesNotExist as e:
+                # shouldn't happen - just flag the error for now
+                # TODO: perhaps send an email to admin?
+                logger.error("Warning in GocardlessMandateManager.process_mandate_from_webhook - mandate object not found: " + repr(e), extra={'event':event})
+
+
+        except Exception as e:
+            # odd - this should always be possible, perhaps there was a connection error
+            logger.error("Error in GocardlessMandateManager.process_mandate_from_webhook - exception fetching mandate info: " + repr(e), extra={'event':event})
+
+
+        return response
+
+
 class GocardlessMandate(models.Model):
     id = models.CharField(max_length=16, unique=True, primary_key=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -88,6 +122,22 @@ class GocardlessMandate(models.Model):
     class Meta:
         db_table = 'gocardlessmandate'
         app_label = 'main'
+
+    def __init__(self, *args, **kwargs):
+        super(GocardlessMandate, self).__init__(*args, **kwargs)
+        self.old_status = self.status
+
+    def save(self, force_insert=False, force_update=False):
+        if self.status != self.old_status:
+            # status has changed...  so need to act on it:
+            # TODO: something useful
+
+            # bubble status change event up to mandate
+            if self.supporter_membership is not None:
+                self.supporter_membership.handle_mandate_updated(self)
+
+        super(GocardlessMandate, self).save(force_insert, force_update)
+        self.old_status = self.status
 
     # is_supporter_mandate
     def is_supporter_mandate(self):
