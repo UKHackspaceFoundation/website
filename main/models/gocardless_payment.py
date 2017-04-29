@@ -132,10 +132,13 @@ class GocardlessPayment(models.Model):
     def save(self, force_insert=False, force_update=False):
         if self.status != self.old_status:
             # status has changed...  so need to act on it:
+            if self.status == 'paid_out':
+                # update date...  this is lazy, but probably good enough
+                self.payout_date = timezone.now()
 
             # bubble status change event up to mandate
-
-            pass
+            if self.mandate is not None:
+                self.mandate.handle_payment_updated(self)
 
 
         super(GocardlessPayment, self).save(force_insert, force_update)

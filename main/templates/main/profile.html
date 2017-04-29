@@ -47,6 +47,7 @@
                     {% elif user.member_type == "Supporter" %}
 
                         {% if user.supporter_status == "Pending" or user.supporter_status == "Approved" %}
+
                             <table class="table no-margin">
                                 <tr {% if user.supporter_membership.has_active_mandate %}class="alert-success"{% endif %}>
                                     <td>Direct Debit Mandate Created</td>
@@ -119,6 +120,15 @@
                                         <td></td>
                                     {% endif %}
                                 </tr>
+
+                                {% if user.supporter_membership.is_active %}
+                                <tr>
+                                    <td>Membership Expires</td>
+                                    <td></td>
+                                    <td>{{ user.supporter_membership.expired_at }}</td>
+                                </tr>
+
+                                {% endif %}
 
 <!---
                                 <h4>Payments</h4>

@@ -11,6 +11,7 @@ import gocardless_pro
 import logging
 import uuid
 from .gocardless_mandate import GocardlessMandate
+from datetime import datetime, timedelta
 
 # get instance of a logger
 logger = logging.getLogger(__name__)
@@ -60,9 +61,9 @@ class SupporterMembership(models.Model):
     # when was the application membership created
     created_at = models.DateTimeField(default=timezone.now)
     # when was the first payment received
-    started_at = models.DateTimeField(null=True)
+    started_at = models.DateField(null=True)
     # when did the membership expire
-    expired_at = models.DateTimeField(null=True)
+    expired_at = models.DateField(null=True)
     # what user is this associated with:
     user = models.ForeignKey('User', models.CASCADE)
     # gocardless redirect flow id
@@ -79,6 +80,12 @@ class SupporterMembership(models.Model):
 
     def __str__(self):
         return self.user.name() + ' - ' + self.created_at.strftime('%Y-%m-%d')
+
+    def is_active(self):
+        if self.expired_at is not None:
+            return self.status == 'Approved' and self.expired_at > timezone.now().date()
+        else:
+            return False
 
     # is there an active mandate?
     def has_active_mandate(self):
@@ -261,6 +268,21 @@ class SupporterMembership(models.Model):
             return self.mandate().create_payment(self.fee)
 
 
-    # TODO: update started_at when first payment received
-    # TODO: update expired_at when new payment received
+    def handle_payment_received(self, payment):
+        if payment.payout_date is not None:
+            # update started_at when first payment received
+            self.started_at = payment.payout_date
+
+            # update expired_at when new payment received
+            print(payment.payout_date)
+            print(timedelta(days=365))
+            self.expired_at = payment.payout_date + timedelta(days=365)
+
+            self.save()
+        else:
+            logger.error("handle_payment_received - payout_date is null")
+
+        # TODO: send notification email of payment received and membership active
+
+
     # TODO: get associated mandates

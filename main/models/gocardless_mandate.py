@@ -164,3 +164,10 @@ class GocardlessMandate(models.Model):
         except Exception as e:
             logger.error("Error in GocardlessMandate.create_payment: "+repr(e), extra={'mandate':self})
             return None
+
+    # called when webhook receives a payment associated with this mandate
+    def handle_payment_updated(self, payment):
+        # if paid_out, bubble up to supprter membership
+        if payment.status == 'paid_out':
+            if self.supporter_membership is not None:
+                self.supporter_membership.handle_payment_received(payment)
