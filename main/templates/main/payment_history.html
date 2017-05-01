@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Payment History | Hackspace Foundation{% endblock %}
+
+{% block content %}
+
+<h1>Your Payment History</h1>
+
+<p>The following tables show your detailed history from membership applications through Direct Debit mandates down to individual payments.</p>
+
+<div class="row">
+    <div class="col-md-12">
+
+
+        {% for ma in user.supporter_memberships %}
+
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Supporter Membership Record {{ forloop.counter }}</h3>
+                </div>
+                <div class="panel-body">
+                    <table class="table no-margin">
+                        <tr>
+                            <td class="col-md-2">Status</td>  <td>{{ ma.status }}</td>
+                        </tr>
+                        <tr>
+                            <td>Created</td>  <td>{{ ma.created_at }}</td>
+                        </tr>
+                        <tr>
+                            <td>Started</td>
+                            <td>
+                                {{ ma.started_at }}
+                                {% if ma.started_at is None %}
+                                (Initial payment not received)
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Expired</td>  <td>{{ ma.expired_at }}</td>
+                        </tr>
+                        <tr>
+                            <td>Fee</td>  <td>{{ ma.fee }}</td>
+                        </tr>
+                        <tr>
+                            <td>Mandates</td>
+                            <td>
+                                {% for mandate in ma.mandates %}
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">
+                                        <h3 class="panel-title">Mandate Record {{ forloop.counter }}</h3>
+                                    </div>
+                                    <div class="panel-body">
+                                        <table class="table no-margin">
+                                            <tr>
+                                                <td class="col-md-2">Status</td>  <td>{{ mandate.status }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Created</td>  <td>{{ mandate.created_at }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Reference</td>  <td>{{ mandate.reference }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Payments</td>
+                                                <td>
+
+                                                    {% for payment in mandate.payments %}
+                                                    <div class="panel panel-default">
+                                                        <div class="panel-heading">
+                                                            <h3 class="panel-title">Payment Record {{ forloop.counter }}</h3>
+                                                        </div>
+                                                        <div class="panel-body">
+                                                            <table class="table no-margin">
+                                                                <tr>
+                                                                    <td class="col-md-3">Status</td>  <td>{{ payment.status }}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Description</td>  <td>{{ payment.description }}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Created</td>  <td>{{ payment.created_at }}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Charge Date</td>  <td>{{ payment.charge_date }}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Payout Date</td>  <td>{{ payment.payout_date }}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Amount</td>  <td>&pound;{% widthratio payment.amount 100 1 %}</td>
+                                                                </tr>
+                                                            </table>
+
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+
+                                                </td>
+                                            </tr>
+
+                                        </table>
+
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </td>
+                        </tr>
+
+                    </table>
+
+                </div>
+            </div>
+
+        {% endfor %}
+
+        <p><a href="{% url 'profile' %}" class="btn btn-primary">Back to Profile</a></p>
+    </div>
+</div>
+
+
+{% endblock %}

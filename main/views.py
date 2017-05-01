@@ -2,22 +2,24 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.views import View
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 import json
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.edit import CreateView
-from .models import Space, GocardlessPayment
-from .forms import CustomUserCreationForm, SupporterMemberForm, NewSpaceForm
+from .models import Space, SupporterMembership, GocardlessMandate, GocardlessPayment
+from .forms import CustomUserCreationForm, SupporterMembershipForm, NewSpaceForm
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils.decorators import method_decorator
 import requests
 import markdown
 from urllib.parse import urljoin
 from main.models import User
 from dealer.git import git
 from django.conf import settings
-from django.views.generic.edit import UpdateView
+from django.views.generic.edit import UpdateView, FormView
 from django.urls import reverse_lazy, reverse
 from django import forms
 import gocardless_pro
@@ -26,10 +28,18 @@ from django.core.mail import EmailMessage
 from django.template.loader import get_template
 from django.template import Context
 import logging
+import hmac
+import hashlib
+import os
 
 
 # get instance of a logger
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+
+def error(request):
+    return render(request, 'main/error.html')
 
 
 def index(request):
@@ -48,8 +58,7 @@ def profile(request):
     associated_users = User.objects.filter(space=request.user.space, space_status='Approved')
     payments = None
 
-    if request.user.member_status == 'Approved' and request.user.member_type == 'Supporter':
-        payments = GocardlessPayment.objects.filter(user=request.user)
+    # TODO: provide payment summary to template
 
     return render(request, 'main/profile.html', {
         'MAPBOX_ACCESS_TOKEN': getattr(settings, "MAPBOX_ACCESS_TOKEN", None),
@@ -162,273 +171,154 @@ def join(request):
     return render(request, 'join/join.html')
 
 
-class join_supporter_step1(LoginRequiredMixin, UpdateView):
-    model = User
+class JoinSupporterStep1(LoginRequiredMixin, CreateView):
+    form_class = SupporterMembershipForm
     success_url = reverse_lazy('join_supporter_step2')
-    form_class = SupporterMemberForm
-    template_name = 'join_supporter/supporter_step1.html'
+    template_name = 'join_supporter/step1.html'
 
-    def get_object(self, queryset=None):
-        return self.request.user
+    def dispatch(self, request, *args, **kwargs):
+        # if user already has an active membership then return to profile page
+        if request.user.supporter_status() == 'Pending' or request.user.supporter_status() == 'Approved':
+            messages.error(request, 'You already have an active membership', extra_tags='alert-danger')
+            logger.error("Error in JoinSupporterStep1 - user has an existing membership", extra={'user':request.user})
+            return redirect(reverse('profile'))
+
+        return super(JoinSupporterStep1, self).dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        # hook up the new application to the current user
+        form.instance.user = self.request.user
+        return super().form_valid(form)
 
 
 @login_required
 def join_supporter_step2(request):
+    try:
+        # get membership application
+        ma = request.user.supporter_membership()
 
-    # reset the member type and status  (in case of previous rejection)
-    request.user.member_type = 'None'
-    request.user.member_status = 'Blank'
+        try:
+            # see if the application already has a mandate
+            mandate = ma.mandate()
 
+            # if it's active...
+            if mandate.is_active():
+                # redirect to step 3:
+                return redirect(reverse('join_supporter_step3'))
 
-    # get gocardless client object
-    client = gocardless_pro.Client(
-        access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
-        environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
-    )
+        except GocardlessMandate.DoesNotExist as e:
+            # if not, continue...
+            pass
 
+        # redirect user to create a new mandate
+        return redirect( ma.get_redirect_flow_url(request) )
 
-    # check if this user already has a valid diret debit mandate
-    if request.user.gocardless_mandate_id is not None and len(request.user.gocardless_mandate_id) > 0:
-
-        # check to see if mandate is still valid
-        mandate = client.mandates.get(request.user.gocardless_mandate_id)
-
-        if mandate.status == 'failed' or mandate.status == 'expired' or mandate.status == 'cancelled':
-
-            # existing mandate no longer valid - will need to create a new one
-            request.user.gocardless_mandate_id = ''
-            request.user.gocardless_customer_id = ''
-            request.user.save()
-
-        else:
-            # redirect to supporter_step3
-            return redirect(reverse('join_supporter_step3', kwargs={'session_token':request.user.gocardless_session_token}))
-
-    # generate a new session_token
-    request.user.gocardless_session_token = uuid.uuid4().hex
-
-    # create a redirect_flow, pre-fill the users name and email
-    redirect_flow = client.redirect_flows.create(
-        params={
-            "description" : "Hackspace Foundation Individual Membership",
-            "session_token" : request.user.gocardless_session_token,
-            "success_redirect_url" : request.build_absolute_uri(reverse('join_supporter_step3', kwargs={'session_token':request.user.gocardless_session_token} )),
-            "prefilled_customer": {
-                "given_name": request.user.first_name,
-                "family_name": request.user.last_name,
-                "email": request.user.email
-            }
-        }
-    )
-
-    # store the redirect id
-    request.user.gocardless_redirect_flow_id = redirect_flow.id
-
-    # commit changes to database
-    request.user.save()
-
-    return redirect(redirect_flow.redirect_url)
+    except SupporterMembership.DoesNotExist as e:
+        # odd, user does not have an active membership application - send them to step1
+        logger.error("Error in join_supporter_step2 - user does not have a membership application", extra={'user':request.user})
+        return redirect(reverse('join_supporter_step1'))
 
 
 @login_required
-def join_supporter_step3(request, session_token):
+def join_supporter_step3(request):
 
-    # check if we need to complete the redirect flow
-    if request.user.gocardless_mandate_id is None or len(request.user.gocardless_mandate_id) == 0:
-
-        if session_token != request.user.gocardless_session_token:
-            messages.error(request, 'Something went wrong, please restart your application', extra_tags='alert-danger')
-            logger.error("Error in join_supporter_step3 - session tokens don't match", extra={'user':request.user})
-            return redirect(reverse('join_supporter_step1'))
-
-        # get gocardless client object
-        client = gocardless_pro.Client(
-            access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
-            environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
-        )
+    try:
+        # get membership application
+        ma = request.user.supporter_membership()
+        mandate = None
 
         try:
-            redirect_flow = client.redirect_flows.complete(
-                request.GET.get('redirect_flow_id', ''),
-                params = {
-                    'session_token': session_token
-                }
-            )
+            # see if the application already has a mandate
+            mandate = ma.mandate()
+            logger.info("Found existing mandate: {}".format(mandate.id))
 
-            # save customer and mandate IDs
-            request.user.gocardless_mandate_id = redirect_flow.links.mandate
-            request.user.gocardless_customer_id = redirect_flow.links.customer
+        except GocardlessMandate.DoesNotExist as e:
+            # if not, complete the flow and create a new mandate record
+            logger.info("No existing mandate, completing redirect flow")
+            mandate = ma.complete_redirect_flow(request)
 
-            request.user.save()
+        # now do the email approval stuff
+        logger.info("Sending approval request email")
+        ma.send_approval_request(request)
 
-        except gocardless_pro.errors.InvalidStateError as e:
-            messages.error(request, "Invalid State: " + str(e), extra_tags='alert-danger')
-            logger.error("Error in join_supporter_step3 - invalid gocardless state: "+str(e), extra={'user':request.user})
-
-        except Exception as e:
-            messages.error(request, "Exception: " + str(e), extra_tags='alert-danger')
-            logger.error("Error in join_supporter_step3 - error in mandate creation: "+repr(e), extra={'user':request.user})
+        # finally, render the completion page
+        return render(request, 'join_supporter/supporter_step3.html')
 
 
-    # update the member type and status
-    request.user.member_type = 'Supporter'
-    request.user.member_status = 'Pending'
-    request.user.save()
+    except SupporterMembership.DoesNotExist as e:
+        # odd, user does not have an active membership application - send them to step1
+        logger.error("Error in join_supporter_step3 - user does not have a membership application", extra={'user':request.user})
+        return redirect(reverse('join_supporter_step1'))
 
-
-    # Notify admin of pending application
-    htmly = get_template('join_supporter/supporter_application_email.html')
-
-    d = Context({
-        'email': request.user.email,
-        'first_name': request.user.first_name,
-        'last_name': request.user.last_name,
-        'note': request.user.member_statement,
-        'fee': request.user.member_fee,
-        'approve_url': request.build_absolute_uri(reverse('supporter-approval', kwargs={'session_token':request.user.gocardless_session_token, 'action':'approve'} )),
-        'reject_url': request.build_absolute_uri(reverse('supporter-approval', kwargs={'session_token':request.user.gocardless_session_token, 'action':'reject'} ))
-    })
-
-    subject = "Supporter Member Application from " + request.user.first_name +" " + request.user.last_name
-    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
-    to = getattr(settings, "BOARD_EMAIL", None)
-    message = htmly.render(d)
-    try:
-        msg = EmailMessage(subject, message, to=[to], from_email=from_email)
-        msg.content_subtype = 'html'
-        msg.send()
-    except Exception as e:
-        # TODO: oh dear - how should we handle this gracefully?!?
-        logger.error("Error in join_supporter_step3 - failed to send email: "+str(e), extra={'user':request.user})
-
-
-    return render(request, 'join_supporter/supporter_step3.html')
 
 
 def supporter_approval(request, session_token, action):
 
     if action != 'approve' and action != 'reject':
-        # this shouldn't happen - just redirect to home
+        # this shouldn't happen
         logger.error("Error in supporter_approval - unexpected action: "+action, extra={'user':request.user})
-        return redirect(reverse_lazy('index'))
+        return redirect(reverse('error'))
 
     try:
-        # lookup user info based on key
-        user = User.objects.get(gocardless_session_token=session_token)
+        # lookup membership application based on session_token
+        ma = SupporterMembership.objects.get(session_token=session_token)
 
-        # check user has not already been approved/rejected (e.g. by someone else!)
-        if user.member_status != 'Pending':
-            messages.error(request, "Error - "+ user.first_name+" appears to have already been " + user.member_status, extra_tags='alert-danger')
-            return render(request, 'base.html')
-
-
-        # update user object
-        user.member_status = 'Approved' if action=='approve' else 'Rejected'
-
-        user.save()
-
-        # email user to notify of decision
-        htmly = get_template('join_supporter/supporter_decision_email.html')
-
-        d = Context({
-            'email': user.email,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'fee': user.member_fee,
-            'action': action
-        })
-
-        subject = "Hackspace Foundation Membership Application"
-        from_email = getattr(settings, "BOARD_EMAIL", None)
-        to = user.email
-        message = htmly.render(d)
-        try:
-            msg = EmailMessage(subject, message, to=[to], from_email=from_email)
-            msg.content_subtype = 'html'
-            msg.send()
-        except Exception as e:
-            # TODO: oh dear - how should we handle this gracefully?!?
-            logger.error("Error in supporter_approval - unable to send email: "+str(e), extra={'user':request.user})
-
-
-        # get gocardless client object
-        client = gocardless_pro.Client(
-            access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
-            environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
-        )
-
-        # if approved, request gocardless payment
+        # apply approval action
+        error = False
         if action == 'approve':
-
-
-            # generate idempotency key
-            key = uuid.uuid4().hex
-
-            try:
-                # create payment
-                payment = client.payments.create(
-                    params={
-                        "amount" : int(user.member_fee * 100), # convert to pence
-                        "currency" : "GBP",
-                        "links" : {
-                            "mandate": user.gocardless_mandate_id
-                        },
-                        "metadata": {
-                            "type":"SupporterSubscription"
-                            # TODO: decide if we want to add metadata to the payment
-                        }
-                    }, headers={
-                        'Idempotency-Key' : key
-                })
-
-                # Store payment object
-                payment.idempotency_key = key
-                obj = GocardlessPayment.objects.get_or_create_from_payload(payment)
-
-                # add user relationship to object
-                obj.user = user
-                obj.save()
-
-
-            except Exception as e:
-                logger.error("Error in supporter_approval - exception creating payment: "+repr(e), extra={'user':user})
-
-
-
-        # if rejected, then cancel mandate
+            error = not ma.approve()
         else:
+            error = not ma.reject()
 
-            try:
-                # cancel mandate
-                mandate = client.mandates.cancel(user.gocardless_mandate_id)
+        if error:
+            messages.error(request, "Error - "+ ma.user.first_name+" appears to have already been " + ma.status, extra_tags='alert-danger')
+            return redirect(reverse('error'))
 
-
-                # reset gocardless info on user object
-                user.gocardless_mandate_id = '';
-                user.gocardless_customer_id = '';
-                user.gocardless_redirect_flow_id = '';
-
-                user.save()
-
-
-            except Exception as e:
-                logger.error("Error in supporter_approval - exception cancelling mandate: "+repr(e), extra={'user':request.user})
-
-
-        # make a context object for the template to render
+        # thank the approver/reviewer for their response
         context = {
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'email':user.email,
+            'first_name': ma.user.first_name,
+            'last_name': ma.user.last_name,
+            'email': ma.user.email,
             'action': ('approving' if action=='approve' else 'rejecting')
         }
         return render(request, 'join_supporter/supporter_approval.html', context)
 
-    except User.DoesNotExist as e:
-        # aargh - that's not right - redirect to home
-        logger.error("Error in supporter_approval - user does not exist: "+str(e), extra={'user':request.user})
-        return redirect(reverse_lazy('index'))
 
+    except Exception as e:
+        # unknown/invalid membership application
+        logger.error("Error in supporter_approval - "+str(e), extra={
+            'user':request.user,
+            'session_token': session_token,
+            'action': action
+        })
+        messages.error(request, "Error in supporter_approval - "+str(e), extra_tags='alert-danger')
+        return redirect(reverse('error'))
+
+
+@login_required
+def supporter_membership_payment(request):
+    # request new payment and return to profile
+
+    try:
+        # lookup membership application based on session_token
+        ma = SupporterMembership.objects.get_membership(request.user)
+
+        # attempt to request new payment
+        ma.request_payment();
+
+        messages.info(request, "Payment requested", extra_tags='alert-success')
+
+    except Exception as e:
+        messages.error(request, "Error in supporter_approval - "+str(e), extra_tags='alert-danger')
+
+    return redirect(reverse('profile'))
+
+@login_required
+def payment_history(request):
+    # show detailed payment history for logged in user
+
+
+    return render(request, 'main/payment_history.html')
 
 
 class Login(View):
@@ -628,3 +518,42 @@ def github_browser(request, settings, path):
         'subtitle': settings['subtitle']
     }
     return render(request, 'main/github_browser.html', context)
+
+
+# Handle Gocardless Webhook messages
+class GocardlessWebhook(View):
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super(GocardlessWebhook, self).dispatch(*args, **kwargs)
+
+    def is_valid_signature(self, request):
+        secret = bytes(getattr(settings, "GOCARDLESS_WEBHOOK_SECRET", None), 'utf-8')
+        computed_signature = hmac.new(
+            secret, request.body, hashlib.sha256).hexdigest()
+        provided_signature = request.META["HTTP_WEBHOOK_SIGNATURE"]
+        # In flask, access the webhook signature header with
+        # request.headers.get('Webhook-Signature')
+        return hmac.compare_digest(provided_signature, computed_signature)
+
+    def post(self, request, *args, **kwargs):
+        if self.is_valid_signature(request):
+            response = HttpResponse()
+            payload = json.loads(request.body.decode('utf-8'))
+            # Each webhook may contain multiple events to handle, batched together.
+            for event in payload['events']:
+                self.process(event, response)
+            return response
+        else:
+            return HttpResponse(498)
+
+    def process(self, event, response):
+        msg = "Processing event id:{}, resource_type:{}\n".format(event['id'], event['resource_type'])
+        response.write(msg)
+        logger.info(msg)
+        if event['resource_type'] == 'mandates':
+            return GocardlessMandate.objects.process_mandate_from_webhook(event, response)
+        elif event['resource_type'] == 'payments':
+            return GocardlessPayment.objects.process_payment_from_webhook(event, response)
+        else:
+            response.write("Don't know how to process an event with resource_type {}\n".format(event['resource_type']))
+            return response

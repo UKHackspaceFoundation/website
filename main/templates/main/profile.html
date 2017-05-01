@@ -30,7 +30,7 @@
         {% if user.member_type != "Representative" %}
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">Your Membership {% if user.member_status == "Pending" %} is Pending!{% endif %}</h3>
+                    <h3 class="panel-title">Your Membership</h3>
                 </div>
                 <div class="panel-body">
 
@@ -42,42 +42,132 @@
                             <p>Click below to apply for individual membership to the foundation:</p>
                         {% endif %}
 
-
                         <a href="{% url 'join_supporter_step1' %}" class="btn btn-success">Apply</a>
 
                     {% elif user.member_type == "Supporter" %}
 
-                        {% if user.member_status == "Pending" %}
-                            <p>Your application is pending review by the Board - we'll email you once they have made a decision</p>
+                        {% if user.supporter_status == "Pending" or user.supporter_status == "Approved" %}
 
-                        {% elif user.member_status == 'Rejected' %}
+                            <table class="table">
+                                <tr {% if user.supporter_membership.has_active_mandate %}class="alert-success"{% endif %}>
+                                    <td>Direct Debit Mandate Created</td>
+                                    <td>
+                                        {% if user.supporter_membership.has_active_mandate %}
+                                            <span class="glyphicon glyphicon-ok-sign text-success" aria-hidden="true"></span>
+                                        {% else %}
+                                            <span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true"></span>
+
+                                            <a href="{% url 'join_supporter_step2' %}" class="btn btn-primary btn-sm">Create</a>
+                                        {% endif %}
+                                    </td>
+                                    <td></td>
+                                </tr>
+                                <tr {% if user.supporter_membership.approval_request_count > 0 %}class="alert-success"{% endif %}>
+                                    <td>Application Submitted</td>
+                                    {% if user.supporter_membership.approval_request_count > 0 %}
+                                        <td><span class="glyphicon glyphicon-ok-sign text-success" aria-hidden="true"></span></td>
+                                        <td></td>
+                                    {% else %}
+                                        <td><span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true"></span></td>
+
+                                        <td>
+                                            <a href="{% url 'join_supporter_step3' %}" class="btn btn-primary btn-sm">Send</a>
+                                        </td>
+
+                                    {% endif %}
+
+                                </tr>
+                                <tr {% if user.supporter_membership.status == "Approved" %}class="alert-success"{% endif %}>
+                                    <td>Application Approved</td>
+                                    <td>
+                                        {% if user.supporter_membership.status == "Pending" %}
+                                            <span class="glyphicon glyphicon-question-sign text-warning" aria-hidden="true" data-toggle="tooltip" title="Your application is pending review by the Board"></span>
+                                        {% elif user.supporter_membership.status == "Approved" %}
+                                            <span class="glyphicon glyphicon-ok-sign text-success" aria-hidden="true"></span>
+                                        {% endif %}
+                                    </td>
+                                    <td></td>
+                                </tr>
+
+                                <tr {% if user.supporter_membership.mandate.payment.status != "failed" %}class="alert-success"{% endif %}>
+                                    <td>Payment Requested</td>
+                                    {% if user.supporter_membership.mandate.payments and user.supporter_membership.mandate.payment.status != 'failed' %}
+                                        <td><span class="glyphicon glyphicon-ok-sign text-success" aria-hidden="true" data-toggle="tooltip" title=""></span></td>
+
+                                        <td>&pound;{% widthratio user.supporter_membership.mandate.payment.amount 100 1 %} on {{ user.supporter_membership.mandate.payment.charge_date }}</td>
+                                    {% else %}
+                                        <td><span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true" data-toggle="tooltip" title="Payment not yet requested or failed"></span></td>
+
+                                        {% if user.supporter_membership.status == "Approved"%}
+                                            <td>
+                                                <a href="{% url 'supporter-membership-payment' %}" class="btn btn-danger btn-sm">Resend</a>
+                                            </td>
+                                        {% endif %}
+                                    {% endif %}
+                                </tr>
+
+                                {% if user.supporter_membership.mandate.payments and user.supporter_membership.mandate.payment.status == 'failed' %}
+                                <tr>
+                                    <td colspan="3">
+                                        <div class="alert alert-danger no-margin">Payment failed - please check you have sufficient funds in your account and try again</div>
+                                    </td>
+                                </tr>
+                                {% endif %}
+
+                                <tr {% if user.supporter_membership.mandate.payment.status == "paid_out" %}class="alert-success"{% endif %}>
+                                    <td>Payment Received</td>
+                                    {% if user.supporter_membership.mandate.payment.status == "paid_out" %}
+                                        <td>
+                                            <span class="glyphicon glyphicon-ok-sign text-success" aria-hidden="true" data-toggle="tooltip" title="Payment received"></span>
+                                        </td>
+                                        <td>{{ user.supporter_membership.mandate.payment.payout_date }}</td>
+                                    {% else %}
+                                        <td>
+                                            <span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true" data-toggle="tooltip" title="Payment not yet received"></span>
+                                        </td>
+                                        <td></td>
+                                    {% endif %}
+                                </tr>
+
+                                {% if user.supporter_membership.is_active %}
+                                <tr>
+                                    <td>Membership Expires</td>
+                                    <td></td>
+                                    <td>{{ user.supporter_membership.expired_at }}</td>
+                                </tr>
+
+                                {% endif %}
+
+<!---
+                                <h4>Payments</h4>
+                                <table class="table table-condensed no-margin">
+                                    <thead>
+                                        <tr style="background-color: #eee">
+                                            <th>Amount</th> <th>Charge Date</th> <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for payment in payments %}
+                                        <tr>
+                                            <td>&pound;{% widthratio payment.amount 100 1 %}</td>
+                                            <td>{{ payment.charge_date }}</td>
+                                            <td>{{ payment.status }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                --->
+
+                            </table>
+
+                            {% if user.supporter_membership.status == "Approved"%}
+                            <p class="no-margin"><a href="{% url 'payment-history' %}" class="btn btn-primary">Payment History</a></p>
+                            {% endif %}
+
+                        {% elif user.supporter_status == 'Rejected' %}
                             <p>Unfortunately, your application has been <b>rejected</b> by the Board - you should have received an email explaining the reason(s) for their decision.</p>
 
-                        {% elif user.member_status == 'Approved' %}
-                            <dl class="dl-horizontal">
-                                <dt>Membership Status</dt> <dd>Approved</dd>
-                                <dt>Subscription Fee</dt> <dd>&pound;{{ user.member_fee }}</dd>
-                                <dt>Customer ID</dt> <dd>{{ user.gocardless_customer_id }}</dd>
-                                <dt>Mandate ID</dt> <dd>{{ user.gocardless_mandate_id }}</dd>
-                            </dl>
-
-                            <h4>Payments</h4>
-                            <table class="table table-condensed no-margin">
-                                <thead>
-                                    <tr style="background-color: #eee">
-                                        <th>Amount</th> <th>Charge Date</th> <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for payment in payments %}
-                                    <tr>
-                                        <td>&pound;{% widthratio payment.amount 100 1 %}</td>
-                                        <td>{{ payment.charge_date }}</td>
-                                        <td>{{ payment.status }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                            <a href="{% url 'join_supporter_step1' %}" class="btn btn-success">Apply Again</a>
                         {% endif %}
 
                     {% endif %}

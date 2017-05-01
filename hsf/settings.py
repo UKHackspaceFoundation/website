@@ -39,15 +39,14 @@ TELEGRAM_BOT_CHAT_ID = -150366976
 # GOCARDLESS
 GOCARDLESS_ACCESS_TOKEN = ""
 GOCARDLESS_ENVIRONMENT = "sandbox"
+GOCARDLESS_WEBHOOK_SECRET = ""
 
 
 # Application definition
 
 INSTALLED_APPS = [
     'main.apps.MainConfig',
-    'membership.apps.MembershipConfig',
     'distelbot.apps.DistelbotConfig',
-    'trademarks.apps.TrademarksConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
