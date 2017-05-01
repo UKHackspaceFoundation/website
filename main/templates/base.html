@@ -27,7 +27,7 @@
       {% if messages %}
         <ul class="messages">
             {% for message in messages %}
-            <div class="alert alert-info {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</li>
+            <div class="alert alert-sm alert-info {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</li>
             {% endfor %}
         </ul>
       {% endif %}
@@ -38,7 +38,7 @@
         <div class="container">
             {% block footer %}
             <div class="pull-right">Copyright ©2017. All Rights Reserved</div>
-            <a href="/foundation/codeOfConduct.md">Code of Conduct</a>
+            <a href="{% url 'foundation' path='codeOfConduct.md' %}">Code of Conduct</a>
             {% endblock %}
         </div>
     </div>

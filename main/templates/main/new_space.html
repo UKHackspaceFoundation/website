@@ -2,13 +2,15 @@
 {% load static %}
 {% load widget_tweaks %}
 
-{% block title %}Edit Space | {{ block.super }}{% endblock %}
+{% block title %}New Space | {{ block.super }}{% endblock %}
 
 {% block content %}
 
 <div class="row">
     <div class="col-md-8">
-        <h1>Edit Space Profile</h1>
+        <h1>New Space Info</h1>
+
+        <p>Please fill out the form below and we'll make sure the map/index of Hackspaces gets updated:</p>
 
         {{ form.non_field_errors }}
         {{ form.errors }}
@@ -16,8 +18,8 @@
         <form method="POST" class="form-horizontal">
             {% csrf_token %}
             <div class="form-group">
-                <label for="inputName" class="col-sm-2 control-label">Name</label>
-                <div class="col-sm-10">
+                <label for="inputName" class="col-sm-4 control-label">Hackspace Name</label>
+                <div class="col-sm-8">
                     {% if form.name.errors %}
                         {% for error in form.name.errors %}
                             <div class="alert alert-sm alert-danger">{{ error|escape }}</div>
@@ -27,25 +29,14 @@
                 </div>
             </div>
             <div class="form-group">
-                <label for="inputStatus" class="col-sm-2 control-label">Status</label>
-                <div class="col-sm-10">
-                    {% if form.status.errors %}
-                        {% for error in form.status.errors %}
-                            <div class="alert alert-sm alert-danger">{{ error|escape }}</div>
-                        {% endfor %}
-                    {% endif %}
-                    {% render_field form.status class+="form-control" %}
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="inputWebsite" class="col-sm-2 control-label">Website</label>
-                <div class="col-sm-10">
+                <label for="inputWebsite" class="col-sm-4 control-label">Website</label>
+                <div class="col-sm-8">
                     {% render_field form.main_website_url class+="form-control" %}
                 </div>
             </div>
             <div class="form-group">
-                <label for="inputEmail" class="col-sm-2 control-label">Email</label>
-                <div class="col-sm-10">
+                <label for="inputEmail" class="col-sm-4 control-label">Email</label>
+                <div class="col-sm-8">
                     {% if form.email.errors %}
                         {% for error in form.email.errors %}
                             <div class="alert alert-sm alert-danger">{{ error|escape }}</div>
@@ -54,55 +45,35 @@
                     {% render_field form.email class+="form-control" %}
                 </div>
             </div>
-            <div class="form-group">
-                <label for="inputLogo" class="col-sm-2 control-label">Logo URL</label>
-                <div class="col-sm-10">
-                    {% render_field form.logo_image_url class+="form-control" %}
-                </div>
-            </div>
 
             <div class="form-group">
-                <label for="inputHavePremises" class="col-sm-2 control-label">Have Premises?</label>
-                <div class="col-sm-10">
+                <label for="inputHavePremises" class="col-sm-4 control-label">Have Premises?</label>
+                <div class="col-sm-8">
                     {% render_field form.have_premises class+="form-control" %}
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="inputAddress" class="col-sm-2 control-label">Address</label>
-                <div class="col-sm-10">
-                    {% render_field form.address_first_line class+="form-control" %}
+                <label for="inputAddress" class="col-sm-4 control-label">Address</label>
+                <div class="col-sm-8">
+                    {% render_field form.address class+="form-control" style="height:95px;" %}
                 </div>
             </div>
+
             <div class="form-group">
-                <label for="inputTown" class="col-sm-2 control-label">Town</label>
-                <div class="col-sm-10">
-                    {% render_field form.town class+="form-control" %}
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="inputRegion" class="col-sm-2 control-label">Region</label>
-                <div class="col-sm-10">
-                    {% render_field form.region class+="form-control" %}
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="inputPostcode" class="col-sm-2 control-label">Postcode</label>
-                <div class="col-sm-10">
-                    {% render_field form.postcode class+="form-control" %}
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="inputCountry" class="col-sm-2 control-label">Country</label>
-                <div class="col-sm-10">
-                    {% render_field form.country class+="form-control" %}
+                <label for="inputAddress" class="col-sm-4 control-label">Notes</label>
+                <div class="col-sm-8">
+                    <p>Please let us know any other additional information you'd like captured (e.g. status of the space, history):</p>
+                    {% render_field form.notes class+="form-control" style="height:95px;" %}
                 </div>
             </div>
 
 
             <div class="form-group">
-                <label for="inputMap" class="col-sm-2 control-label">Map</label>
-                <div class="col-sm-10">
+                <label for="inputMap" class="col-sm-4 control-label">Map</label>
+                <div class="col-sm-8">
+                    <p>Drag the pin to mark the location of the hackspace:</p>
+
                     <input type="hidden" id="id_lat" name="lat" value="{{ form.lat.value }}"/>
                     <input type="hidden" id="id_lng" name="lng" value="{{ form.lng.value }}"/>
 
@@ -114,10 +85,10 @@
 
 
             <div class="form-group">
-                <div class="col-sm-offset-2 col-sm-10">
-                    <button type="submit" class="btn btn-primary pull-right">Update</button>
+                <div class="col-sm-offset-4 col-sm-8">
+                    <button type="submit" class="btn btn-primary pull-right">Submit</button>
 
-                    <a href="{% url 'profile' %}" class="btn btn-danger">Cancel</a>
+                    <a href="{% url 'index' %}" class="btn btn-danger">Cancel</a>
                 </div>
             </div>
         </form>

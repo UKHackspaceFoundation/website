@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Supporter Member Approval{% endblock %}
+
+{% block content %}
+<h2>Supporter Member Approval</h2>
+
+<p>Thankyou for <b>{{ action }}</b> {{ first_name }} {{ last_name }}'s application for Supporter Membership.</p>
+
+{% if action == 'rejecting' %}
+    <p>Please don't forget to contact {{ first_name }} directly and explain the reason(s) for {{ action }} - <a href="{{ email }}">{{ email }}</a></p>
+{% endif %}
+
+{% endblock %}

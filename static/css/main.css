@@ -104,6 +104,10 @@ dt {
     font-size: 14px;
 }
 
+.messages {
+    margin-top: 15px;
+}
+
 .jumbotron {
     background-color: #2d4670;
     padding-top: 25px;

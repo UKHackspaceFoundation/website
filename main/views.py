@@ -2,28 +2,49 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.views import View
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 import json
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.edit import CreateView
-from .models import Space
-from .forms import CustomUserCreationForm
+from .models import Space, SupporterMembership, GocardlessMandate, GocardlessPayment
+from .forms import CustomUserCreationForm, SupporterMembershipForm, NewSpaceForm
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils.decorators import method_decorator
 import requests
 import markdown
 from urllib.parse import urljoin
 from main.models import User
 from dealer.git import git
 from django.conf import settings
-from django.views.generic.edit import UpdateView
-from django.urls import reverse_lazy
+from django.views.generic.edit import UpdateView, FormView
+from django.urls import reverse_lazy, reverse
+from django import forms
+import gocardless_pro
+import uuid
+from django.core.mail import EmailMessage
+from django.template.loader import get_template
+from django.template import Context
+import logging
+import hmac
+import hashlib
+import os
+
+
+# get instance of a logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+
+def error(request):
+    return render(request, 'main/error.html')
 
 
 def index(request):
-    activeSpaces = Space.objects.filter(status="Active") | Space.objects.filter(status="Starting")
-    inactiveSpaces = Space.objects.filter(status="Defunct") | Space.objects.filter(status="Suspended")
+    activeSpaces = Space.objects.active_spaces()
+    inactiveSpaces = Space.objects.inactive_spaces()
     return render(request, 'main/index.html', {
         'activeSpaces': activeSpaces,
         'inactiveSpaces': inactiveSpaces,
@@ -31,19 +52,24 @@ def index(request):
     })
 
 
-# homepage for registered users
+# profile page for registered users
 @login_required
-def home(request):
-    associated_users = User.objects.filter(space=request.user.space)
-    return render(request, 'main/home.html', {
+def profile(request):
+    associated_users = User.objects.filter(space=request.user.space, space_status='Approved')
+    payments = None
+
+    # TODO: provide payment summary to template
+
+    return render(request, 'main/profile.html', {
         'MAPBOX_ACCESS_TOKEN': getattr(settings, "MAPBOX_ACCESS_TOKEN", None),
-        'associated_users': associated_users
+        'associated_users': associated_users,
+        'payments': payments
     })
 
 
 class UserUpdate(LoginRequiredMixin, UpdateView):
     model = User
-    success_url = '/home'
+    success_url = '/profile'
     form_class = CustomUserCreationForm
 
     # make request object available to form
@@ -60,7 +86,7 @@ class UserUpdate(LoginRequiredMixin, UpdateView):
 class SpaceUpdate(LoginRequiredMixin, UpdateView):
     model = Space
     fields = ['name', 'status', 'main_website_url', 'email','have_premises', 'address_first_line', 'town', 'region', 'postcode', 'country', 'lat', 'lng', 'logo_image_url']
-    success_url = '/home'
+    success_url = '/profile'
 
     def get_object(self, queryset=None):
         return self.request.user.space
@@ -73,15 +99,14 @@ class SpaceUpdate(LoginRequiredMixin, UpdateView):
     def dispatch(self, request, *args, **kwargs):
         # make sure users have space_status='Approved'
         if self.request.user.space_status != 'Approved':
-            # otherwise redirect to home
-            return redirect('/home')
-        return super(UpdateStory, self).dispatch(request, *args, **kwargs)
+            # otherwise redirect to profile
+            return redirect(reverse_lazy('profile'))
+        return super(SpaceUpdate, self).dispatch(request, *args, **kwargs)
 
 
 # return space info as json - used for rendering map on homepage
 def spaces(request):
-    results = Space.objects.all().values('name', 'lat', 'lng', 'main_website_url', 'logo_image_url', 'status')
-    return JsonResponse({'spaces': list(results)})
+    return JsonResponse( Space.objects.as_json() )
 
 
 @login_required
@@ -94,26 +119,7 @@ def gitinfo(request):
 
 # return space info as geojson
 def geojson(request):
-    results = Space.objects.all().values('name', 'lat', 'lng', 'main_website_url', 'logo_image_url', 'status')
-    geo = {
-        "type": "FeatureCollection",
-        "features": []
-    }
-    for space in results:
-        if (space['lng'] != 0 and space['lat'] != 0):
-            geo['features'].append({
-                "type": "Feature",
-                "geometry": {
-                    "type": "Point",
-                    "coordinates": [float(space['lng']), float(space['lat'])]
-                },
-                "properties": {
-                    "name": space['name'],
-                    "url": space['main_website_url'],
-                    "status": space['status'],
-                    "logo": space['logo_image_url']
-                }
-            })
+    geo = Space.objects.as_geojson()
     return JsonResponse(geo)
 
 
@@ -157,20 +163,162 @@ def import_spaces(request):
             srecord.save()
         # else
             # existing record, do nothing for now
-    return redirect('/space_detail')
+    return redirect(reverse_lazy('space_detail'))
 
 
-
-def starting(request):
-    return render(request, 'main/starting.html')
-
-
+@login_required
 def join(request):
-    return render(request, 'main/join.html')
+    return render(request, 'join/join.html')
 
 
-def join_supporter(request):
-    return render(request, 'main/supporter.html')
+class JoinSupporterStep1(LoginRequiredMixin, CreateView):
+    form_class = SupporterMembershipForm
+    success_url = reverse_lazy('join_supporter_step2')
+    template_name = 'join_supporter/step1.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        # if user already has an active membership then return to profile page
+        if request.user.supporter_status() == 'Pending' or request.user.supporter_status() == 'Approved':
+            messages.error(request, 'You already have an active membership', extra_tags='alert-danger')
+            logger.error("Error in JoinSupporterStep1 - user has an existing membership", extra={'user':request.user})
+            return redirect(reverse('profile'))
+
+        return super(JoinSupporterStep1, self).dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        # hook up the new application to the current user
+        form.instance.user = self.request.user
+        return super().form_valid(form)
+
+
+@login_required
+def join_supporter_step2(request):
+    try:
+        # get membership application
+        ma = request.user.supporter_membership()
+
+        try:
+            # see if the application already has a mandate
+            mandate = ma.mandate()
+
+            # if it's active...
+            if mandate.is_active():
+                # redirect to step 3:
+                return redirect(reverse('join_supporter_step3'))
+
+        except GocardlessMandate.DoesNotExist as e:
+            # if not, continue...
+            pass
+
+        # redirect user to create a new mandate
+        return redirect( ma.get_redirect_flow_url(request) )
+
+    except SupporterMembership.DoesNotExist as e:
+        # odd, user does not have an active membership application - send them to step1
+        logger.error("Error in join_supporter_step2 - user does not have a membership application", extra={'user':request.user})
+        return redirect(reverse('join_supporter_step1'))
+
+
+@login_required
+def join_supporter_step3(request):
+
+    try:
+        # get membership application
+        ma = request.user.supporter_membership()
+        mandate = None
+
+        try:
+            # see if the application already has a mandate
+            mandate = ma.mandate()
+            logger.info("Found existing mandate: {}".format(mandate.id))
+
+        except GocardlessMandate.DoesNotExist as e:
+            # if not, complete the flow and create a new mandate record
+            logger.info("No existing mandate, completing redirect flow")
+            mandate = ma.complete_redirect_flow(request)
+
+        # now do the email approval stuff
+        logger.info("Sending approval request email")
+        ma.send_approval_request(request)
+
+        # finally, render the completion page
+        return render(request, 'join_supporter/supporter_step3.html')
+
+
+    except SupporterMembership.DoesNotExist as e:
+        # odd, user does not have an active membership application - send them to step1
+        logger.error("Error in join_supporter_step3 - user does not have a membership application", extra={'user':request.user})
+        return redirect(reverse('join_supporter_step1'))
+
+
+
+def supporter_approval(request, session_token, action):
+
+    if action != 'approve' and action != 'reject':
+        # this shouldn't happen
+        logger.error("Error in supporter_approval - unexpected action: "+action, extra={'user':request.user})
+        return redirect(reverse('error'))
+
+    try:
+        # lookup membership application based on session_token
+        ma = SupporterMembership.objects.get(session_token=session_token)
+
+        # apply approval action
+        error = False
+        if action == 'approve':
+            error = not ma.approve()
+        else:
+            error = not ma.reject()
+
+        if error:
+            messages.error(request, "Error - "+ ma.user.first_name+" appears to have already been " + ma.status, extra_tags='alert-danger')
+            return redirect(reverse('error'))
+
+        # thank the approver/reviewer for their response
+        context = {
+            'first_name': ma.user.first_name,
+            'last_name': ma.user.last_name,
+            'email': ma.user.email,
+            'action': ('approving' if action=='approve' else 'rejecting')
+        }
+        return render(request, 'join_supporter/supporter_approval.html', context)
+
+
+    except Exception as e:
+        # unknown/invalid membership application
+        logger.error("Error in supporter_approval - "+str(e), extra={
+            'user':request.user,
+            'session_token': session_token,
+            'action': action
+        })
+        messages.error(request, "Error in supporter_approval - "+str(e), extra_tags='alert-danger')
+        return redirect(reverse('error'))
+
+
+@login_required
+def supporter_membership_payment(request):
+    # request new payment and return to profile
+
+    try:
+        # lookup membership application based on session_token
+        ma = SupporterMembership.objects.get_membership(request.user)
+
+        # attempt to request new payment
+        ma.request_payment();
+
+        messages.info(request, "Payment requested", extra_tags='alert-success')
+
+    except Exception as e:
+        messages.error(request, "Error in supporter_approval - "+str(e), extra_tags='alert-danger')
+
+    return redirect(reverse('profile'))
+
+@login_required
+def payment_history(request):
+    # show detailed payment history for logged in user
+
+
+    return render(request, 'main/payment_history.html')
 
 
 class Login(View):
@@ -183,25 +331,67 @@ class Login(View):
         user = authenticate(username=username, password=password)
         if user is not None:
             login(request, user)
-            return redirect('/home')
+
+            # mark user as active (must have completed signup if they are able to login)
+            if not user.active:
+                user.active = True
+                user.save()
+
+            # FIXME: Redirect to page in 'next' query param ?
+            return redirect(reverse_lazy('profile'))
         else:
-            messages.error(request, "Invalid username or password")
+            messages.error(request, "Invalid username or password", extra_tags='alert-danger')
+            logger.error("Error in Login - invalid username or password: "+username)
             return render(request, 'main/login.html')
 
 
 def logout_view(request):
     logout(request)
-    return redirect('/')
+    return redirect(reverse_lazy('index'))
+
+
+def new_space(request):
+    form_class = NewSpaceForm
+
+    try:
+        if request.method == 'POST':
+            form = form_class(request.POST)
+
+            if form.is_valid():
+
+                template = get_template('main/new_space_email.txt')
+                context = Context({ 'form': form.cleaned_data })
+                content = template.render(context)
+
+                email = EmailMessage(
+                    "New space form submission",
+                    content,
+                    getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                    [getattr(settings, "BOARD_EMAIL", None)],
+                    headers = {'Reply-To': request.POST.get('email', '') }
+                )
+                email.send()
+
+                messages.info(request, "Thanks - we'll get that space added to the map ")
+                return redirect(reverse('new_space'))
+    except Exception as e:
+        messages.error(request, "Error dealing with submission, please try again", extra_tags='alert-danger')
+        logger.error("Error in new_space - exception: "+str(e))
+
+    return render(request, 'main/new_space.html', {
+        'form': form_class,
+        'MAPBOX_ACCESS_TOKEN': getattr(settings, "MAPBOX_ACCESS_TOKEN", None)
+    })
 
 
 class SignupView(CreateView):
     form_class = CustomUserCreationForm
     model = User
-    template_name = 'main/signup.html'
+    template_name = 'signup/signup.html'
 
     # make request object available to form
     def get_form_kwargs(self):
-        kw = super(UserUpdate, self).get_form_kwargs()
+        kw = super(SignupView, self).get_form_kwargs()
         kw['request'] = self.request
         return kw
 
@@ -217,28 +407,29 @@ class SignupView(CreateView):
             # Copied from django/contrib/auth/views.py : password_reset
             opts = {
                 'use_https': self.request.is_secure(),
-                'email_template_name': 'main/verification.html',
-                'subject_template_name': 'main/verification_subject.txt',
+                'email_template_name': 'user_space_verification/verification.html',
+                'subject_template_name': 'user_space_verification/verification_subject.txt',
                 'request': self.request,
             }
             # This form sends the email on save()
             reset_form.save(**opts)
 
-            return redirect('signup-done')
+            return redirect(reverse_lazy('signup-done'))
         except Exception as e:
             # boo - most likely error is ConnectionRefused, but could be others
             # best to delete partially formed user object so we don't leave useless entries in the database
             obj.delete()
             messages.error(self.request, "Error emailing verification link: " + str(e), extra_tags='alert-danger')
+            logger.error("Error in SignupView - unable to send password reset email: "+str(e))
 
-            return redirect('signup')
+            return redirect(reverse_lazy('signup'))
 
 
 def space_approval(request, key, action):
 
     if action != 'approve' and action != 'reject':
         # this shouldn't happen - just redirect to home
-        return redirect('/')
+        return redirect(reverse_lazy('index'))
 
     try:
         # lookup user info based on key
@@ -256,11 +447,11 @@ def space_approval(request, key, action):
             'hackspace': user.space.name,
             'action': ('approving' if action=='approve' else 'rejecting')
         }
-        return render(request, 'main/space_approval.html', context)
+        return render(request, 'user_space_verification/space_approval.html', context)
 
     except User.DoesNotExist as e:
         # aargh - that's not right - redirect to home
-        return redirect('/')
+        return redirect(reverse_lazy('index'))
 
 
 def resources(request, path):
@@ -327,3 +518,42 @@ def github_browser(request, settings, path):
         'subtitle': settings['subtitle']
     }
     return render(request, 'main/github_browser.html', context)
+
+
+# Handle Gocardless Webhook messages
+class GocardlessWebhook(View):
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super(GocardlessWebhook, self).dispatch(*args, **kwargs)
+
+    def is_valid_signature(self, request):
+        secret = bytes(getattr(settings, "GOCARDLESS_WEBHOOK_SECRET", None), 'utf-8')
+        computed_signature = hmac.new(
+            secret, request.body, hashlib.sha256).hexdigest()
+        provided_signature = request.META["HTTP_WEBHOOK_SIGNATURE"]
+        # In flask, access the webhook signature header with
+        # request.headers.get('Webhook-Signature')
+        return hmac.compare_digest(provided_signature, computed_signature)
+
+    def post(self, request, *args, **kwargs):
+        if self.is_valid_signature(request):
+            response = HttpResponse()
+            payload = json.loads(request.body.decode('utf-8'))
+            # Each webhook may contain multiple events to handle, batched together.
+            for event in payload['events']:
+                self.process(event, response)
+            return response
+        else:
+            return HttpResponse(498)
+
+    def process(self, event, response):
+        msg = "Processing event id:{}, resource_type:{}\n".format(event['id'], event['resource_type'])
+        response.write(msg)
+        logger.info(msg)
+        if event['resource_type'] == 'mandates':
+            return GocardlessMandate.objects.process_mandate_from_webhook(event, response)
+        elif event['resource_type'] == 'payments':
+            return GocardlessPayment.objects.process_payment_from_webhook(event, response)
+        else:
+            response.write("Don't know how to process an event with resource_type {}\n".format(event['resource_type']))
+            return response

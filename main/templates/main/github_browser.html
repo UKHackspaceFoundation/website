@@ -23,7 +23,7 @@
 <ol class="breadcrumb" style="width:100%">
     <li><a href="/{{ repo }}/">{{ title }}</a></li>
     {% for breadcrumb in breadcrumbs %}
-        <li><a href="/resources{{ breadcrumb.url }}">{{ breadcrumb.slug }}</a></li>
+        <li><a href="/{{ repo }}{{ breadcrumb.url }}">{{ breadcrumb.slug }}</a></li>
     {% endfor %}
 </ol>
 

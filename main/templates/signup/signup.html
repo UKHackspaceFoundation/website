@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Register | {{ block.super }}{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-md-8">
+        <h1>Register as a User</h1>
+
+
+        <div class="alert alert-info" role="alert">
+            <p>Registering as a user will allow you to:</p>
+            <ul>
+                <li>Maintain profile information about your hackspace</li>
+                <li>Apply for individual membership to the Hackspace Foundation</li>
+                <li>Apply for your Hackspace to become a Member Space of the Hackspace Foundation</li>
+            </ul>
+        </div>
+
+        {{ form.non_field_errors }}
+
+        <form method="POST" class="form-horizontal">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="inputEmail" class="col-sm-2 control-label">Email</label>
+                <div class="col-sm-10">
+                    {% if form.email.errors %}
+                        {% for error in form.email.errors %}
+                            <div class="alert alert-sm alert-danger">{{ error|escape }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    {% render_field form.email class+="form-control" %}
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputFirstName" class="col-sm-2 control-label">First Name</label>
+                <div class="col-sm-10">
+                    {% if form.first_name.errors %}
+                        {% for error in form.first_name.errors %}
+                            <div class="alert alert-sm alert-danger">{{ error|escape }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    {% render_field form.first_name class+="form-control" %}
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputLastName" class="col-sm-2 control-label">Last Name</label>
+                <div class="col-sm-10">
+                    {% if form.last_name.errors %}
+                        {% for error in form.last_name.errors %}
+                            <div class="alert alert-sm alert-danger">{{ error|escape }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    {% render_field form.last_name class+="form-control" %}
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <p>Please read and indicate your agreement to the our <b>Code of Conduct</b> before registering:</p>
+                    <p><a href="{% url 'foundation' path='codeOfConduct.md' %}" target="_blank" class="btn btn-success">Read Code of Conduct</a></p>
+                </div>
+
+                <div class="form-group no-margin">
+                    <label for="inputPassword2" class="col-sm-2 control-label">Agree?</label>
+                    <div class="col-sm-10">
+                        {% if form.agree_to_coc.errors %}
+                            {% for error in form.agree_to_coc.errors %}
+                                <div class="alert alert-sm alert-danger">{{ error|escape }}</div>
+                            {% endfor %}
+                        {% endif %}
+                        {% render_field form.agree_to_coc class+="form-control" %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-offset-2 col-sm-10">
+                <p>If you're a member of a Hackspace, please select it from the list below (select &quot;---------&quot; if you're not a member of a space):</p>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-2 control-label">Hackspace</label>
+                <div class="col-sm-10">
+                    {% render_field form.space class+="form-control" %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <button type="submit" class="btn btn-primary">Register</button>
+                </div>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}
