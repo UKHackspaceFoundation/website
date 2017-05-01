@@ -1,15 +1,8 @@
 from django.db import models
-from django.conf import settings
-from django.contrib.auth.models import (AbstractUser,BaseUserManager)
-from django.core.mail import EmailMessage
-from django.template import Context
-from django.template.loader import get_template
-from django.urls import reverse
+from django.contrib.auth.models import (AbstractUser, BaseUserManager)
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-import gocardless_pro
 import logging
-import uuid
 from .supporter_membership import SupporterMembership
 
 # get instance of a logger
@@ -50,10 +43,10 @@ class SpaceUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-class User(AbstractUser):
 
+class User(AbstractUser):
     APPROVAL_STATUS_CHOICES = (
-        ("Blank", "Blank"),   #space is blank
+        ("Blank", "Blank"),   # space is blank
         ("Pending", "Pending"),  # space relationship has changed, approval is pending
         ("Approved", "Approved"),  # space relationship has been approved
         ("Rejected", "Rejected"),  # space relationship has been rejected
@@ -83,7 +76,7 @@ class User(AbstractUser):
     # disable default required fields
     REQUIRED_FIELDS = []
 
-    objects = SpaceUserManager();
+    objects = SpaceUserManager()
 
     class Meta:
         # set default ordering to be on first_name

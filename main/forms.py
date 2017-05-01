@@ -21,7 +21,7 @@ class CustomUserCreationForm(ModelForm):
 
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ('email','first_name','last_name','space','agree_to_coc')
+        fields = ('email', 'first_name', 'last_name', 'space', 'agree_to_coc')
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
@@ -46,13 +46,11 @@ class CustomUserCreationForm(ModelForm):
             user = super(CustomUserCreationForm, self).save(False)
 
             # see if user has selected None
-            if user.space == None:
+            if user.space is None:
                 # reset space status
                 user.space_status = 'Blank'
 
-
             else:
-
                 # reset space approval status
                 user.space_status = 'Pending'
 
@@ -79,11 +77,15 @@ class CustomUserCreationForm(ModelForm):
                     'first_name': user.first_name,
                     'last_name': user.last_name,
                     'hackspace': user.space.name,
-                    'approve_url': self.request.build_absolute_uri(reverse('space-approval', kwargs={'key': user.space_request_key, 'action':'approve'} )),
-                    'reject_url': self.request.build_absolute_uri(reverse('space-approval', kwargs={'key': user.space_request_key, 'action':'reject'} ))
+                    'approve_url': self.request.build_absolute_uri(
+                        reverse('space-approval',
+                                kwargs={'key': user.space_request_key, 'action': 'approve'})),
+                    'reject_url': self.request.build_absolute_uri(
+                        reverse('space-approval',
+                                kwargs={'key': user.space_request_key, 'action': 'reject'}))
                 })
 
-                subject = "Is " + user.first_name +" " + user.last_name + " a member of " + user.space.name + "?"
+                subject = "Is %s %s a member of %s?" % (user.first_name, user.last_name, user.space.name)
                 from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
                 to = user.space_approver
                 message = htmly.render(d)
@@ -95,7 +97,6 @@ class CustomUserCreationForm(ModelForm):
                     # TODO: oh dear - how should we handle this gracefully?!?
                     print("Error sending email" + str(e))
 
-
         # commit changes to the DB
         return super(CustomUserCreationForm, self).save(commit)
 
@@ -103,7 +104,7 @@ class CustomUserCreationForm(ModelForm):
 class SupporterMembershipForm(ModelForm):
     class Meta:
         model = SupporterMembership
-        fields = ('fee','statement')
+        fields = ('fee', 'statement')
 
     # ensure fee is not less than £10.00
     def clean_fee(self):

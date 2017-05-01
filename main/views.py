@@ -19,18 +19,14 @@ from urllib.parse import urljoin
 from main.models import User
 from dealer.git import git
 from django.conf import settings
-from django.views.generic.edit import UpdateView, FormView
+from django.views.generic.edit import UpdateView
 from django.urls import reverse_lazy, reverse
-from django import forms
-import gocardless_pro
-import uuid
 from django.core.mail import EmailMessage
 from django.template.loader import get_template
 from django.template import Context
 import logging
 import hmac
 import hashlib
-import os
 
 
 # get instance of a logger
@@ -85,7 +81,9 @@ class UserUpdate(LoginRequiredMixin, UpdateView):
 
 class SpaceUpdate(LoginRequiredMixin, UpdateView):
     model = Space
-    fields = ['name', 'status', 'main_website_url', 'email','have_premises', 'address_first_line', 'town', 'region', 'postcode', 'country', 'lat', 'lng', 'logo_image_url']
+    fields = ['name', 'status', 'main_website_url', 'email', 'have_premises',
+              'address_first_line', 'town', 'region', 'postcode', 'country',
+              'lat', 'lng', 'logo_image_url']
     success_url = '/profile'
 
     def get_object(self, queryset=None):
@@ -106,7 +104,7 @@ class SpaceUpdate(LoginRequiredMixin, UpdateView):
 
 # return space info as json - used for rendering map on homepage
 def spaces(request):
-    return JsonResponse( Space.objects.as_json() )
+    return JsonResponse(Space.objects.as_json())
 
 
 @login_required
@@ -180,7 +178,8 @@ class JoinSupporterStep1(LoginRequiredMixin, CreateView):
         # if user already has an active membership then return to profile page
         if request.user.supporter_status() == 'Pending' or request.user.supporter_status() == 'Approved':
             messages.error(request, 'You already have an active membership', extra_tags='alert-danger')
-            logger.error("Error in JoinSupporterStep1 - user has an existing membership", extra={'user':request.user})
+            logger.error("Error in JoinSupporterStep1 - user has an existing membership",
+                         extra={'user': request.user})
             return redirect(reverse('profile'))
 
         return super(JoinSupporterStep1, self).dispatch(request, *args, **kwargs)
@@ -211,11 +210,12 @@ def join_supporter_step2(request):
             pass
 
         # redirect user to create a new mandate
-        return redirect( ma.get_redirect_flow_url(request) )
+        return redirect(ma.get_redirect_flow_url(request))
 
     except SupporterMembership.DoesNotExist as e:
         # odd, user does not have an active membership application - send them to step1
-        logger.error("Error in join_supporter_step2 - user does not have a membership application", extra={'user':request.user})
+        logger.error("Error in join_supporter_step2 - user does not have a membership application",
+                     extra={'user': request.user})
         return redirect(reverse('join_supporter_step1'))
 
 
@@ -244,19 +244,18 @@ def join_supporter_step3(request):
         # finally, render the completion page
         return render(request, 'join_supporter/supporter_step3.html')
 
-
     except SupporterMembership.DoesNotExist as e:
         # odd, user does not have an active membership application - send them to step1
-        logger.error("Error in join_supporter_step3 - user does not have a membership application", extra={'user':request.user})
+        logger.error("Error in join_supporter_step3 - user does not have a membership application",
+                     extra={'user': request.user})
         return redirect(reverse('join_supporter_step1'))
 
 
-
 def supporter_approval(request, session_token, action):
-
     if action != 'approve' and action != 'reject':
         # this shouldn't happen
-        logger.error("Error in supporter_approval - unexpected action: "+action, extra={'user':request.user})
+        logger.error("Error in supporter_approval - unexpected action: %s", action,
+                     extra={'user': request.user})
         return redirect(reverse('error'))
 
     try:
@@ -271,7 +270,8 @@ def supporter_approval(request, session_token, action):
             error = not ma.reject()
 
         if error:
-            messages.error(request, "Error - "+ ma.user.first_name+" appears to have already been " + ma.status, extra_tags='alert-danger')
+            messages.error(request, "Error - " + ma.user.first_name + " appears to have already been " +
+                           ma.status, extra_tags='alert-danger')
             return redirect(reverse('error'))
 
         # thank the approver/reviewer for their response
@@ -279,19 +279,18 @@ def supporter_approval(request, session_token, action):
             'first_name': ma.user.first_name,
             'last_name': ma.user.last_name,
             'email': ma.user.email,
-            'action': ('approving' if action=='approve' else 'rejecting')
+            'action': ('approving' if action == 'approve' else 'rejecting')
         }
         return render(request, 'join_supporter/supporter_approval.html', context)
 
-
     except Exception as e:
         # unknown/invalid membership application
-        logger.error("Error in supporter_approval - "+str(e), extra={
-            'user':request.user,
+        logger.error("Error in supporter_approval: %s", e, extra={
+            'user': request.user,
             'session_token': session_token,
             'action': action
         })
-        messages.error(request, "Error in supporter_approval - "+str(e), extra_tags='alert-danger')
+        messages.error(request, "Error in supporter_approval: %s" % e, extra_tags='alert-danger')
         return redirect(reverse('error'))
 
 
@@ -304,20 +303,19 @@ def supporter_membership_payment(request):
         ma = SupporterMembership.objects.get_membership(request.user)
 
         # attempt to request new payment
-        ma.request_payment();
+        ma.request_payment()
 
         messages.info(request, "Payment requested", extra_tags='alert-success')
 
     except Exception as e:
-        messages.error(request, "Error in supporter_approval - "+str(e), extra_tags='alert-danger')
+        messages.error(request, "Error in supporter_approval: %s" % e, extra_tags='alert-danger')
 
     return redirect(reverse('profile'))
+
 
 @login_required
 def payment_history(request):
     # show detailed payment history for logged in user
-
-
     return render(request, 'main/payment_history.html')
 
 
@@ -341,7 +339,7 @@ class Login(View):
             return redirect(reverse_lazy('profile'))
         else:
             messages.error(request, "Invalid username or password", extra_tags='alert-danger')
-            logger.error("Error in Login - invalid username or password: "+username)
+            logger.error("Error in Login - invalid username or password for %s", username)
             return render(request, 'main/login.html')
 
 
@@ -360,7 +358,7 @@ def new_space(request):
             if form.is_valid():
 
                 template = get_template('main/new_space_email.txt')
-                context = Context({ 'form': form.cleaned_data })
+                context = Context({'form': form.cleaned_data})
                 content = template.render(context)
 
                 email = EmailMessage(
@@ -368,7 +366,7 @@ def new_space(request):
                     content,
                     getattr(settings, "DEFAULT_FROM_EMAIL", None),
                     [getattr(settings, "BOARD_EMAIL", None)],
-                    headers = {'Reply-To': request.POST.get('email', '') }
+                    headers={'Reply-To': request.POST.get('email', '')}
                 )
                 email.send()
 
@@ -376,7 +374,7 @@ def new_space(request):
                 return redirect(reverse('new_space'))
     except Exception as e:
         messages.error(request, "Error dealing with submission, please try again", extra_tags='alert-danger')
-        logger.error("Error in new_space - exception: "+str(e))
+        logger.exception("Error in new_space - exception")
 
     return render(request, 'main/new_space.html', {
         'form': form_class,
@@ -419,8 +417,9 @@ class SignupView(CreateView):
             # boo - most likely error is ConnectionRefused, but could be others
             # best to delete partially formed user object so we don't leave useless entries in the database
             obj.delete()
-            messages.error(self.request, "Error emailing verification link: " + str(e), extra_tags='alert-danger')
-            logger.error("Error in SignupView - unable to send password reset email: "+str(e))
+            messages.error(self.request, "Error emailing verification link: %s" % e,
+                           extra_tags='alert-danger')
+            logger.exception("Error in SignupView - unable to send password reset email")
 
             return redirect(reverse_lazy('signup'))
 
@@ -436,7 +435,7 @@ def space_approval(request, key, action):
         user = User.objects.get(space_request_key=key)
 
         # update user object
-        user.space_status = 'Approved' if action=='approve' else 'Rejected'
+        user.space_status = 'Approved' if action == 'approve' else 'Rejected'
 
         user.save()
 
@@ -445,7 +444,7 @@ def space_approval(request, key, action):
             'first_name': user.first_name,
             'last_name': user.last_name,
             'hackspace': user.space.name,
-            'action': ('approving' if action=='approve' else 'rejecting')
+            'action': ('approving' if action == 'approve' else 'rejecting')
         }
         return render(request, 'user_space_verification/space_approval.html', context)
 
@@ -555,5 +554,6 @@ class GocardlessWebhook(View):
         elif event['resource_type'] == 'payments':
             return GocardlessPayment.objects.process_payment_from_webhook(event, response)
         else:
-            response.write("Don't know how to process an event with resource_type {}\n".format(event['resource_type']))
+            response.write("Don't know how to process an event with resource_type {}\n".format(
+                event['resource_type']))
             return response
