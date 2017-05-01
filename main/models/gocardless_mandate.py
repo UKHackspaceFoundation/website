@@ -1,12 +1,6 @@
 from django.db import models
 from django.conf import settings
-from django.contrib.auth.models import (AbstractUser,BaseUserManager)
-from django.core.mail import EmailMessage
-from django.template import Context
-from django.template.loader import get_template
-from django.urls import reverse
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 import gocardless_pro
 import logging
 import uuid
@@ -19,8 +13,8 @@ logger = logging.getLogger(__name__)
 # utility functions:
 def get_gocardless_client():
     return gocardless_pro.Client(
-        access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
-        environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
+        access_token=getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
+        environment=getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
     )
 
 
@@ -28,7 +22,8 @@ class GocardlessMandateManager(models.Manager):
 
     # get all mandate records for supporter membership
     def get_mandates_for_supporter_membership(self, supporter_membership):
-        return super(GocardlessMandateManager, self).get_queryset().filter(supporter_membership=supporter_membership)
+        return super(GocardlessMandateManager, self).get_queryset().filter(
+            supporter_membership=supporter_membership)
 
     # get latest mandate for supporter_membership
     def get_mandate_for_supporter_membership(self, supporter_membership):
@@ -45,9 +40,9 @@ class GocardlessMandateManager(models.Manager):
         try:
             # create with required fields only
             obj, created = super(GocardlessMandateManager, self).get_or_create(
-                id = payload.id,
-                created_at = timezone.now(),
-                status = payload.status
+                id=payload.id,
+                created_at=timezone.now(),
+                status=payload.status
             )
             # update everything else in the payload
             for key, value in payload.__dict__.items():
@@ -58,16 +53,16 @@ class GocardlessMandateManager(models.Manager):
                 obj.customer_id = payload.links.customer
             if hasattr(payload.links, 'creditor') and payload.links.creditor is not None:
                 obj.creditor_id = payload.links.creditor
-            if hasattr(payload.links, 'customer_bank_account') and payload.links.customer_bank_account is not None:
+            if (hasattr(payload.links, 'customer_bank_account') and
+                    payload.links.customer_bank_account is not None):
                 obj.customer_bank_account_id = payload.links.customer_bank_account
 
             obj.save()
             return obj
 
         except Exception as e:
-            logger.error("Error in GocardlessMandateManager.get_or_create_from_payload - exception creating payment: " + repr(e), extra={'payload':payload})
+            logger.exception("Exception creating payment", extra={'payload': payload})
             return None
-
 
     def process_mandate_from_webhook(self, event, response):
         # best to ignore the event itself and just fetch latest status via the api
@@ -83,7 +78,8 @@ class GocardlessMandateManager(models.Manager):
 
             # get matching mandate object from DB
             try:
-                mandate = super(GocardlessMandateManager, self).get_queryset().get(id=event['links']['mandate'])
+                mandate = super(GocardlessMandateManager, self).get_queryset().get(
+                    id=event['links']['mandate'])
 
                 # save changes to object - this will also trigger internal handling
                 mandate.status = info.status
@@ -92,13 +88,11 @@ class GocardlessMandateManager(models.Manager):
             except GocardlessMandate.DoesNotExist as e:
                 # shouldn't happen - just flag the error for now
                 # TODO: perhaps send an email to admin?
-                logger.error("Warning in GocardlessMandateManager.process_mandate_from_webhook - mandate object not found: " + repr(e), extra={'event':event})
-
+                logger.exception("Mandate object not found", extra={'event': event})
 
         except Exception as e:
             # odd - this should always be possible, perhaps there was a connection error
-            logger.error("Error in GocardlessMandateManager.process_mandate_from_webhook - exception fetching mandate info: " + repr(e), extra={'event':event})
-
+            logger.error("Exception fetching mandate info", extra={'event': event})
 
         return response
 
@@ -124,7 +118,7 @@ class GocardlessMandate(models.Model):
         app_label = 'main'
 
     def __str__(self):
-        return '{} - {} - {}'.format(self.id,  self.status, self.created_at.strftime('%Y-%m-%d'))
+        return '{} - {} - {}'.format(self.id, self.status, self.created_at.strftime('%Y-%m-%d'))
 
     def __init__(self, *args, **kwargs):
         super(GocardlessMandate, self).__init__(*args, **kwargs)
@@ -167,23 +161,20 @@ class GocardlessMandate(models.Model):
             return True
 
         except Exception as e:
-            logger.error("Error in GocardlessMandate.cancel: "+repr(e), extra={'mandate':self})
+            logger.exception("Error in GocardlessMandate.cancel", extra={'mandate': self})
             return False
-
 
     # Get associated payments
     def payments(self):
         return GocardlessPayment.objects.filter(mandate=self)
 
-
     # Get latest payment (will throw DoesNotExist exception if none)
     def payment(self):
         return self.payments().latest('created_at')
 
-
     def create_payment(self, amount):
         if not self.is_active():
-            raise RuntimeError("Request to create_payment for an inactive mandate");
+            raise RuntimeError("Request to create_payment for an inactive mandate")
 
         # get gocardless client object
         client = get_gocardless_client()
@@ -195,18 +186,18 @@ class GocardlessMandate(models.Model):
             # create payment
             payment = client.payments.create(
                 params={
-                    "amount" : int(amount * 100), # convert to pence
-                    "currency" : "GBP",
-                    "links" : {
+                    "amount": int(amount * 100),  # convert to pence
+                    "currency": "GBP",
+                    "links": {
                         "mandate": self.id
                     },
                     "metadata": {
-                        "type":"SupporterSubscription"
+                        "type": "SupporterSubscription"
                         # TODO: decide if we want to add metadata to the payment
                     }
                 }, headers={
-                    'Idempotency-Key' : key
-            })
+                    'Idempotency-Key': key
+                })
 
             # Store payment object
             payment.idempotency_key = key
@@ -215,7 +206,7 @@ class GocardlessMandate(models.Model):
             return obj
 
         except Exception as e:
-            logger.error("Error in GocardlessMandate.create_payment: "+repr(e), extra={'mandate':self})
+            logger.exception("Error in GocardlessMandate.create_payment", extra={'mandate': self})
             return None
 
     # called when webhook receives a payment associated with this mandate

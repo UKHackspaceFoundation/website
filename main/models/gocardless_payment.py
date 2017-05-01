@@ -1,25 +1,19 @@
 from django.db import models
 from django.conf import settings
-from django.contrib.auth.models import (AbstractUser,BaseUserManager)
-from django.core.mail import EmailMessage
-from django.template import Context
-from django.template.loader import get_template
-from django.urls import reverse
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 import gocardless_pro
 import logging
-import uuid
 
 # get instance of a logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 # utility functions:
 def get_gocardless_client():
     return gocardless_pro.Client(
-        access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
-        environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
+        access_token=getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
+        environment=getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
     )
 
 
@@ -31,11 +25,11 @@ class GocardlessPaymentManager(models.Manager):
         try:
             # create with required fields only
             obj, created = super(GocardlessPaymentManager, self).get_or_create(
-                id = payload.id,
-                created_at = timezone.now(),
-                amount = payload.amount,
-                currency = payload.currency,
-                status = payload.status
+                id=payload.id,
+                created_at=timezone.now(),
+                amount=payload.amount,
+                currency=payload.currency,
+                status=payload.status
             )
             # update everything else in the payload
             for key, value in payload.__dict__.items():
@@ -54,7 +48,7 @@ class GocardlessPaymentManager(models.Manager):
             return obj
 
         except Exception as e:
-            logger.error("Error in GocardlessPaymentManager.get_or_create_from_payload - exception creating payment: " + repr(e), extra={'payload':payload})
+            logger.exception("Exception creating payment", extra={'payload': payload})
             return None
 
     def process_payment_from_webhook(self, event, response):
@@ -71,7 +65,8 @@ class GocardlessPaymentManager(models.Manager):
 
             # get matching payment object from DB
             try:
-                payment = super(GocardlessPaymentManager, self).get_queryset().get(id=event['links']['payment'])
+                payment = super(GocardlessPaymentManager, self).get_queryset().get(
+                    id=event['links']['payment'])
 
                 print(repr(info))
 
@@ -84,13 +79,11 @@ class GocardlessPaymentManager(models.Manager):
             except GocardlessPayment.DoesNotExist as e:
                 # odd...  log error
                 # TODO: perhaps email admin to flag issue
-                logger.error("Error in GocardlessPaymentManager.process_payment_from_webhook - payment object not found: " + repr(e), extra={'event':event})
-
+                logger.exception("Payment object not found", extra={'event': event})
 
         except Exception as e:
             # odd - this should always be possible, perhaps there was a connection error
-            logger.error("Error in GocardlessPaymentManager.process_payment_from_webhook - exception fetching payment info: " + repr(e), extra={'event':event})
-
+            logger.exception("Exception fetching payment info", extra={'event': event})
 
         return response
 
@@ -118,7 +111,7 @@ class GocardlessPayment(models.Model):
         app_label = 'main'
 
     def __str__(self):
-        return '{} - {} - {}'.format(self.id,  self.status, self.created_at.strftime('%Y-%m-%d'))
+        return '{} - {} - {}'.format(self.id, self.status, self.created_at.strftime('%Y-%m-%d'))
 
     def __init__(self, *args, **kwargs):
         super(GocardlessPayment, self).__init__(*args, **kwargs)
@@ -134,7 +127,6 @@ class GocardlessPayment(models.Model):
             # bubble status change event up to mandate
             if self.mandate is not None:
                 self.mandate.handle_payment_updated(self)
-
 
         super(GocardlessPayment, self).save(force_insert, force_update, using)
         self.old_status = self.status

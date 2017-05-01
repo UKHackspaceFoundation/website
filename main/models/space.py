@@ -1,16 +1,6 @@
 from django.db import models
-from django.conf import settings
-from django.contrib.auth.models import (AbstractUser,BaseUserManager)
-from django.core.mail import EmailMessage
-from django.template import Context
-from django.template.loader import get_template
-from django.urls import reverse
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
-import gocardless_pro
 import logging
-import uuid
-from .user import User
 
 # get instance of a logger
 logger = logging.getLogger(__name__)
@@ -18,14 +8,17 @@ logger = logging.getLogger(__name__)
 
 class SpaceManager(models.Manager):
     def active_spaces(self):
-        return super(SpaceManager, self).get_queryset().filter(status="Active") | super(SpaceManager, self).get_queryset().filter(status="Starting")
+        return super(SpaceManager, self).get_queryset().filter(status="Active") | \
+            super(SpaceManager, self).get_queryset().filter(status="Starting")
 
     def inactive_spaces(self):
-        return super(SpaceManager, self).get_queryset().filter(status="Defunct") | super(SpaceManager, self).get_queryset().filter(status="Suspended")
+        return super(SpaceManager, self).get_queryset().filter(status="Defunct") | \
+            super(SpaceManager, self).get_queryset().filter(status="Suspended")
 
     def as_json(self):
         return {'spaces': list(
-            super(SpaceManager, self).get_queryset().values('name', 'lat', 'lng', 'main_website_url', 'logo_image_url', 'status')
+            super(SpaceManager, self).get_queryset().values('name', 'lat', 'lng',
+                                                            'main_website_url', 'logo_image_url', 'status')
         )}
 
     def as_geojson(self):
@@ -36,7 +29,7 @@ class SpaceManager(models.Manager):
         }
         for space in results:
             if space.valid_location():
-                geo['features'].append( space.as_geojson_feature() )
+                geo['features'].append(space.as_geojson_feature())
         return geo
 
 
@@ -51,7 +44,7 @@ class Space(models.Model):
 
     COUNTRY_CHOICES = (
         ("England", "England"),
-        ("Guernsey","Guernsey"),
+        ("Guernsey", "Guernsey"),
         ("Ireland", "Ireland"),
         ("Scotland", "Scotland"),
         ("Wales", "Wales"),

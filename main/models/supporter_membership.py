@@ -1,17 +1,15 @@
 from django.db import models
 from django.conf import settings
-from django.contrib.auth.models import (AbstractUser,BaseUserManager)
 from django.core.mail import EmailMessage
 from django.template import Context
 from django.template.loader import get_template
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 import gocardless_pro
 import logging
 import uuid
 from .gocardless_mandate import GocardlessMandate
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 # get instance of a logger
 logger = logging.getLogger(__name__)
@@ -20,8 +18,8 @@ logger = logging.getLogger(__name__)
 # utility functions:
 def get_gocardless_client():
     return gocardless_pro.Client(
-        access_token = getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
-        environment = getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
+        access_token=getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
+        environment=getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
     )
 
 
@@ -79,7 +77,7 @@ class SupporterMembership(models.Model):
         app_label = 'main'
 
     def __str__(self):
-        return '{} - {} - {}'.format(self.user.name(),  self.status, self.created_at.strftime('%Y-%m-%d'))
+        return '{} - {} - {}'.format(self.user.name(), self.status, self.created_at.strftime('%Y-%m-%d'))
 
     def is_active(self):
         if self.expired_at is not None:
@@ -117,9 +115,9 @@ class SupporterMembership(models.Model):
         # create a redirect_flow, pre-fill the users name and email
         redirect_flow = client.redirect_flows.create(
             params={
-                "description" : "Hackspace Foundation Individual Membership",
-                "session_token" : self.session_token,
-                "success_redirect_url" : request.build_absolute_uri( reverse('join_supporter_step3') ),
+                "description": "Hackspace Foundation Individual Membership",
+                "session_token": self.session_token,
+                "success_redirect_url": request.build_absolute_uri(reverse('join_supporter_step3')),
                 "prefilled_customer": {
                     "given_name": self.user.first_name,
                     "family_name": self.user.last_name,
@@ -143,25 +141,25 @@ class SupporterMembership(models.Model):
         logger.info("Completing redirect flow")
         redirect_flow = client.redirect_flows.complete(
             request.GET.get('redirect_flow_id', ''),
-            params = {
+            params={
                 'session_token': self.session_token
             }
         )
 
         # fetch the detailed mandate info
         logger.info("Fetch detailed mandate info")
-        mandate_detail = client.mandates.get( redirect_flow.links.mandate )
+        mandate_detail = client.mandates.get(redirect_flow.links.mandate)
 
         # create new mandate object
         logger.info("Create new mandate object")
         mandate = GocardlessMandate(
-            id = redirect_flow.links.mandate,
-            supporter_membership = self,
-            reference = mandate_detail.reference,
-            status = mandate_detail.status,
-            customer_id = mandate_detail.links.customer,
-            creditor_id = mandate_detail.links.creditor,
-            customer_bank_account_id = mandate_detail.links.customer_bank_account
+            id=redirect_flow.links.mandate,
+            supporter_membership=self,
+            reference=mandate_detail.reference,
+            status=mandate_detail.status,
+            customer_id=mandate_detail.links.customer,
+            creditor_id=mandate_detail.links.creditor,
+            customer_bank_account_id=mandate_detail.links.customer_bank_account
         )
         mandate.save()
 
@@ -180,12 +178,16 @@ class SupporterMembership(models.Model):
             'last_name': self.user.last_name,
             'note': self.statement,
             'fee': self.fee,
-            'approve_url': request.build_absolute_uri(reverse('supporter-approval', kwargs={'session_token':self.session_token, 'action':'approve'} )),
-            'reject_url': request.build_absolute_uri(reverse('supporter-approval', kwargs={'session_token':self.session_token, 'action':'reject'} ))
+            'approve_url': request.build_absolute_uri(
+                reverse('supporter-approval',
+                        kwargs={'session_token': self.session_token, 'action': 'approve'})),
+            'reject_url': request.build_absolute_uri(
+                reverse('supporter-approval',
+                        kwargs={'session_token': self.session_token, 'action': 'reject'}))
         })
 
         # prep headers
-        subject = "Supporter Member Application from " + self.user.first_name +" " + self.user.last_name
+        subject = "Supporter Member Application from %s %s" % (self.user.first_name, self.user.last_name)
         from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
         to = getattr(settings, "BOARD_EMAIL", None)
 
@@ -198,13 +200,13 @@ class SupporterMembership(models.Model):
             msg.send()
 
             # track how many times we've sent a request
-            self.approval_request_count += 1;
+            self.approval_request_count += 1
             self.save()
 
         except Exception as e:
             # TODO: oh dear - how should we handle this gracefully?!?
-            logger.error("Error in send_approval_request - failed to send email: "+str(e), extra={'SupporterMembership':self})
-
+            logger.exception("Error in send_approval_request - failed to send email",
+                             extra={'SupporterMembership': self})
 
     # email user to notify of decision
     def send_application_decision(self):
@@ -229,13 +231,12 @@ class SupporterMembership(models.Model):
 
             return True
         except Exception as e:
-            logger.error("Error in send_application_decision - unable to send email: "+str(e), extra={'membership application':self})
+            logger.exception("Error in send_application_decision - unable to send email",
+                             extra={'membership application': self})
             return False
-
 
     # approve the membership application (and create initial payment)
     def approve(self):
-
         # check user has not already been approved/rejected (e.g. by someone else!)
         if self.status != 'Pending':
             return False
@@ -250,10 +251,8 @@ class SupporterMembership(models.Model):
 
         return True
 
-
     # reject the membership application (and cancel mandate)
     def reject(self):
-
         # check user has not already been approved/rejected (e.g. by someone else!)
         if self.status != 'Pending':
             return False
@@ -269,12 +268,10 @@ class SupporterMembership(models.Model):
 
         return True
 
-
     # request new payment for this membership (e.g. start of a new year)
     def request_payment(self):
         if self.has_active_mandate():
             return self.mandate().create_payment(self.fee)
-
 
     def handle_payment_received(self, payment):
         if payment.payout_date is not None:
@@ -291,7 +288,6 @@ class SupporterMembership(models.Model):
             logger.error("handle_payment_received - payout_date is null")
 
         # TODO: send notification email of payment received and membership active
-
 
     def handle_mandate_updated(self, mandate):
         # TODO: something useful
