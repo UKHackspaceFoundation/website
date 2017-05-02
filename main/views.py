@@ -23,7 +23,6 @@ from django.views.generic.edit import UpdateView
 from django.urls import reverse_lazy, reverse
 from django.core.mail import EmailMessage
 from django.template.loader import get_template
-from django.template import Context
 import logging
 import hmac
 import hashlib
@@ -358,7 +357,7 @@ def new_space(request):
             if form.is_valid():
 
                 template = get_template('main/new_space_email.txt')
-                context = Context({'form': form.cleaned_data})
+                context = {'form': form.cleaned_data}
                 content = template.render(context)
 
                 email = EmailMessage(
