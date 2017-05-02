@@ -4,7 +4,6 @@ from .models import User, SupporterMembership
 from django.utils import timezone
 from django.core.mail import EmailMessage
 from django.template.loader import get_template
-from django.template import Context
 from django.conf import settings
 import uuid
 from django.urls import reverse
@@ -72,7 +71,7 @@ class CustomUserCreationForm(ModelForm):
                 # send approval request email
                 htmly = get_template('user_space_verification/space_approval_email.html')
 
-                d = Context({
+                d = {
                     'email': user.email,
                     'first_name': user.first_name,
                     'last_name': user.last_name,
@@ -83,7 +82,7 @@ class CustomUserCreationForm(ModelForm):
                     'reject_url': self.request.build_absolute_uri(
                         reverse('space-approval',
                                 kwargs={'key': user.space_request_key, 'action': 'reject'}))
-                })
+                }
 
                 subject = "Is %s %s a member of %s?" % (user.first_name, user.last_name, user.space.name)
                 from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)

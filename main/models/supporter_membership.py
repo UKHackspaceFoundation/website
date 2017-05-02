@@ -1,7 +1,6 @@
 from django.db import models
 from django.conf import settings
 from django.core.mail import EmailMessage
-from django.template import Context
 from django.template.loader import get_template
 from django.urls import reverse
 from django.utils import timezone
@@ -172,7 +171,7 @@ class SupporterMembership(models.Model):
         htmly = get_template('join_supporter/supporter_application_email.html')
 
         # build context
-        d = Context({
+        d = {
             'email': self.user.email,
             'first_name': self.user.first_name,
             'last_name': self.user.last_name,
@@ -184,7 +183,7 @@ class SupporterMembership(models.Model):
             'reject_url': request.build_absolute_uri(
                 reverse('supporter-approval',
                         kwargs={'session_token': self.session_token, 'action': 'reject'}))
-        })
+        }
 
         # prep headers
         subject = "Supporter Member Application from %s %s" % (self.user.first_name, self.user.last_name)
@@ -212,13 +211,13 @@ class SupporterMembership(models.Model):
     def send_application_decision(self):
         htmly = get_template('join_supporter/supporter_decision_email.html')
 
-        d = Context({
+        d = {
             'email': self.user.email,
             'first_name': self.user.first_name,
             'last_name': self.user.last_name,
             'fee': self.fee,
             'status': self.status
-        })
+        }
 
         subject = "Hackspace Foundation Membership Application"
         from_email = getattr(settings, "BOARD_EMAIL", None)
