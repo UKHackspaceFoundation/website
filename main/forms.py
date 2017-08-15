@@ -105,7 +105,7 @@ class SupporterMembershipForm(ModelForm):
         model = SupporterMembership
         fields = ('fee', 'statement')
         widgets = {
-            'fee': forms.NumberInput(attrs={'step':0.25})
+            'fee': forms.NumberInput(attrs={'step':0.25, 'min':10.0})
         }
 
     # ensure fee is not less than £10.00
