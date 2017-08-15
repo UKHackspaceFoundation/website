@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load mathfilters %}
 
 {% block title %}Profile | Hackspace Foundation{% endblock %}
 
@@ -94,7 +95,7 @@
                                     {% if user.supporter_membership.mandate.payments and user.supporter_membership.mandate.payment.status != 'failed' %}
                                         <td><span class="glyphicon glyphicon-ok-sign text-success" aria-hidden="true" data-toggle="tooltip" title=""></span></td>
 
-                                        <td>&pound;{% widthratio user.supporter_membership.mandate.payment.amount 100 1 %} on {{ user.supporter_membership.mandate.payment.charge_date }}</td>
+                                        <td>&pound;{{ user.supporter_membership.mandate.payment.amount|div:100|floatformat:2 }} on {{ user.supporter_membership.mandate.payment.charge_date }}</td>
                                     {% else %}
                                         <td><span class="glyphicon glyphicon-remove-sign text-danger" aria-hidden="true" data-toggle="tooltip" title="Payment not yet requested or failed"></span></td>
 
