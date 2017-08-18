@@ -52,52 +52,58 @@ class CustomUserCreationForm(ModelForm):
             else:
                 # reset space approval status
                 user.space_status = 'Pending'
+        
+        return super(CustomUserCreationForm, self).save()
 
-                # populate the approver email address
-                # TODO: Use Representative(s) email if available
-                # If space has a contact email address, then use that:
-                if user.space.email != "":
-                    user.space_approver = user.space.email
-                else:
-                    # otherwise use the default contact address for the site
-                    user.space_approver = getattr(settings, "DEFAULT_FROM_EMAIL", None)
+    def send_confirmation_email(self):
+        user = self.instance
 
-                # note the date
-                user.space_request_date = timezone.now()
+        # see if user has selected None
+        if user.space_status == 'Pending':
 
-                # generate a unique key for this request
-                user.space_request_key = uuid.uuid4().hex
+            # populate the approver email address
+            # TODO: Use Representative(s) email if available
+            # If space has a contact email address, then use that:
+            if user.space.email != "":
+                user.space_approver = user.space.email
+            else:
+                # otherwise use the default contact address for the site
+                user.space_approver = getattr(settings, "DEFAULT_FROM_EMAIL", None)
 
-                # send approval request email
-                htmly = get_template('user_space_verification/space_approval_email.html')
+            # note the date
+            user.space_request_date = timezone.now()
 
-                d = {
-                    'email': user.email,
-                    'first_name': user.first_name,
-                    'last_name': user.last_name,
-                    'hackspace': user.space.name,
-                    'approve_url': self.request.build_absolute_uri(
-                        reverse('space-approval',
-                                kwargs={'key': user.space_request_key, 'action': 'approve'})),
-                    'reject_url': self.request.build_absolute_uri(
-                        reverse('space-approval',
-                                kwargs={'key': user.space_request_key, 'action': 'reject'}))
-                }
+            # generate a unique key for this request
+            user.space_request_key = uuid.uuid4().hex
 
-                subject = "Is %s %s a member of %s?" % (user.first_name, user.last_name, user.space.name)
-                from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
-                to = user.space_approver
-                message = htmly.render(d)
-                try:
-                    msg = EmailMessage(subject, message, to=[to], from_email=from_email)
-                    msg.content_subtype = 'html'
-                    msg.send()
-                except Exception as e:
-                    # TODO: oh dear - how should we handle this gracefully?!?
-                    print("Error sending email" + str(e))
+            # send approval request email
+            htmly = get_template('user_space_verification/space_approval_email.html')
 
-        # commit changes to the DB
-        return super(CustomUserCreationForm, self).save(commit)
+            d = {
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'hackspace': user.space.name,
+                'approve_url': self.request.build_absolute_uri(
+                    reverse('space-approval',
+                            kwargs={'key': user.space_request_key, 'action': 'approve'})),
+                'reject_url': self.request.build_absolute_uri(
+                    reverse('space-approval',
+                            kwargs={'key': user.space_request_key, 'action': 'reject'}))
+            }
+
+            subject = "Is %s %s a member of %s?" % (user.first_name, user.last_name, user.space.name)
+            from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
+            to = user.space_approver
+            message = htmly.render(d)
+            try:
+                msg = EmailMessage(subject, message, to=[to], from_email=from_email)
+                msg.content_subtype = 'html'
+                msg.send()
+            except Exception as e:
+                # TODO: oh dear - how should we handle this gracefully?!?
+                print("Error sending email" + str(e))
+
 
 
 class SupporterMembershipForm(ModelForm):

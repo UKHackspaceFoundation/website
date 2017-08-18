@@ -416,6 +416,8 @@ class SignupView(CreateView):
             # This form sends the email on save()
             reset_form.save(**opts)
 
+            form.send_confirmation_email()
+
             return redirect(reverse_lazy('signup-done'))
         except Exception as e:
             # boo - most likely error is ConnectionRefused, but could be others
