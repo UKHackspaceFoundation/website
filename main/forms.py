@@ -52,7 +52,7 @@ class CustomUserCreationForm(ModelForm):
             else:
                 # reset space approval status
                 user.space_status = 'Pending'
-        
+
         return super(CustomUserCreationForm, self).save()
 
     def send_confirmation_email(self):
@@ -104,14 +104,12 @@ class CustomUserCreationForm(ModelForm):
                 # TODO: oh dear - how should we handle this gracefully?!?
                 print("Error sending email" + str(e))
 
-
-
 class SupporterMembershipForm(ModelForm):
     class Meta:
         model = SupporterMembership
         fields = ('fee', 'statement')
         widgets = {
-            'fee': forms.NumberInput(attrs={'step':0.25, 'min':10.0})
+            'fee': forms.NumberInput(attrs={'step': 0.25, 'min': 10.0})
         }
 
     # ensure fee is not less than £10.00
