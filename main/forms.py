@@ -104,6 +104,7 @@ class CustomUserCreationForm(ModelForm):
                 # TODO: oh dear - how should we handle this gracefully?!?
                 print("Error sending email" + str(e))
 
+
 class SupporterMembershipForm(ModelForm):
     class Meta:
         model = SupporterMembership
