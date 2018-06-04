@@ -1217,6 +1217,28 @@
         "townNotInName": true,
         "longname": "OxHack (Oxford)"
     },
+     {
+        "name": "EOF Hackspace",
+        "nestaRecord": "N",
+        "town": "Oxford",
+        "country": "England",
+        "mainWebsiteUrl": "https://eof.org.uk/",
+        "logoImageUrl": "https://forum.eof.org.uk/uploads/default/original/1X/3affc78ca81805e44654faef345b2b69b4ac88b3.png",
+        "status": "Active",
+        "classification": "Hackspace",
+        "havePremises": "Yes",
+        "numMembers": 15,
+        "contactEmail": "info@eof.org.uk",
+        "addressFirstLine": "Aristotle House, 1 Aristotle Lane, Oxford, UK",
+        "postcode": "OX2 6TP",
+        "combinedAddress": "Aristotle House, 1 Aristotle Lane, Oxford, UK, OX2 6TP",
+        "lat": 51.7679708,
+        "lng": -1.2701042,
+        "mapUrl": "http://maps.google.com/?q=51.7679708,-1.2701042",
+        "region": "South East England",
+        "townNotInName": true,
+        "longname": "EOF Hackspace CIC"
+    },
     {
         "name": "Pembrokeshire Hackspace",
         "nestaRecord": "N",
