@@ -18,3 +18,10 @@ from .settings import *
 EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
 DEFAULT_FROM_EMAIL = "contact@hackspace.org.uk"
+# Change so that you can pretend to be the board and approve members
+BOARD_EMAIL = "changeme@somewhere.com"
+
+# GOCARDLESS - signup at https://manage-sandbox.gocardless.com/signup
+GOCARDLESS_ENVIRONMENT = "sandbox"
+GOCARDLESS_WEBHOOK_SECRET = ""
+GOCARDLESS_ACCESS_TOKEN = ""
