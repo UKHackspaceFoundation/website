@@ -27,7 +27,7 @@ To get things up and running, run:
 
 This will download and run a separate containerised Postgres instance, and will show all the logs
 in the console. Once it's running, you should now be able to access your development site at 
-[http://localhost:8080](http://localhost:8080). Any changes you make to your development
+[http://localhost:8000](http://localhost:8000). Any changes you make to your development
 copy should be automatically reloaded.
 
 If you `Ctrl+c` the process, it'll stop the containers. If you run
@@ -48,6 +48,16 @@ This requires that the local Docker environment is running.
 To run the Django shell with IPython on your local environment, you can run:
 
 	$ make shell
+
+If you've created a user account through [http://localhost:8000/signup](http://localhost:8000/signup)
+and want to make yourself an admin, the appropriate shell incantation is:
+
+```python
+from main.models.user import User
+u = User.objects.all()[0]
+u.is_staff = True
+u.save()
+```
 
 ## Managing Dependencies
 
