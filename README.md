@@ -1,21 +1,51 @@
-This is the website for www.hackspace.org.uk.
+This is the website for the [UK Hackspace Foundation](hackspace.org.uk).
 
-This is a Python 3 project, so make sure you have a python 3
-interpreter installed.
+# Development
 
-To configure: Copy the hsf/local_settings.py.example to
-hsf/local_settings.py and edit as necessary. Don't forget to check if
-the example has updated on pulling new changes.
+## Requirements
+You'll need a development environment with PostgreSQL (ideally 9.5) and Python 3
+(ideally 3.7).
 
-You will need a GoCardless sandbox account to test payments: Visit
-https://manage-sandbox.gocardless.com/signup to create one. Create an
-access token and set it in the local_settings.py
+The easiest way of getting a consistent development enviroment is to use Docker. You'll
+need Docker and docker-compose installed locally (install it 
+[from here](https://store.docker.com/search?type=edition&offering=community)).
 
-To run (it will use a sqlite database in dev), simply type:
+## Setup
 
-    make
+Copy hsf/dev_settings.py.example to hsf/dev_settings.py
 
-Then you should be able to connect to http://localhost:8000.
+If you want to test payments, visit https://manage-sandbox.gocardless.com/signup to
+create a GoCardless sandbox account. Create an access token and set it in dev_settings.py
 
-To check your code for style (and hopefully tests in future), run `make
-test`.
+## Starting the App
+
+To get things up and running, run:
+
+	$ docker-compose up --build
+
+This will download and run a separate containerised Postgres instance, and will show all the logs
+in the console. Once it's running, you should now be able to access your development site at 
+[http://localhost:8080](http://localhost:8080). Any changes you make to your development
+copy should be automatically reloaded.
+
+If you `Ctrl+c` the process, it'll stop the containers. If you run
+`docker-compose down`, it'll destroy the containers *along with your development database*.
+
+Any emails sent by the app will be printed to the console.
+
+## Managing Dependencies
+
+This app uses [Pipenv](https://pipenv.readthedocs.io) to manage dependencies. If you want
+to add or update dependencies, it's easiest to do so from your host machine (so 
+`pip3 install pipenv` locally).
+
+To add a new dependency:
+
+	$ pipenv install <dependencyname>
+
+To update all dependencies to their latest versions:
+
+	$ pipenv install
+
+Once you've updated dependencies, you'll need to rebuild the Docker image by re-running
+`docker-compose up --build` (you don't need to run `docker-compose down`).
