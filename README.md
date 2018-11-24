@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/UKHackspaceFoundation/website.svg?branch=master)](https://travis-ci.org/UKHackspaceFoundation/website)
+
 This is the website for the [UK Hackspace Foundation](hackspace.org.uk).
 
 # Development
@@ -12,7 +14,7 @@ need Docker and docker-compose installed locally (install it
 
 ## Setup
 
-Copy hsf/dev_settings.py.example to hsf/dev_settings.py
+Copy `hsf/dev_settings.py.example` to `hsf/dev_settings.py`.
 
 If you want to test payments, visit https://manage-sandbox.gocardless.com/signup to
 create a GoCardless sandbox account. Create an access token and set it in dev_settings.py
