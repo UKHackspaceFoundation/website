@@ -8,3 +8,6 @@ lint:
 
 ci: lint
 	pipenv run ./manage.py test
+
+shell:
+	$(DOCKER_RUN) ./manage.py shell
