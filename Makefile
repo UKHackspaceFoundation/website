@@ -11,3 +11,7 @@ ci: lint
 
 shell:
 	$(DOCKER_RUN) ./manage.py shell
+
+deploy:
+	docker build . -f ./Dockerfile.prod -t ukhackspacefoundation/website:latest
+	docker push ukhackspacefoundation/website:latest

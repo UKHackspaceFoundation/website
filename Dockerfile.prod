@@ -4,6 +4,8 @@ WORKDIR /usr/src/app
 RUN pip install --no-cache-dir pipenv \
     && apk add --no-cache postgresql-client
 
+COPY . .
+
 # We need a build environment for some of our python dependencies.
 # This mess is mostly from the upstream python-alpine dockerfile.
 RUN apk add --no-cache --virtual .build-deps  \
@@ -31,12 +33,11 @@ RUN apk add --no-cache --virtual .build-deps  \
 		util-linux-dev \
 		xz-dev \
 		zlib-dev \
-		postgresql-dev
-
-COPY Pipfile ./
-COPY Pipfile.lock ./
-RUN pipenv sync --dev
+		postgresql-dev \
+	&& pipenv sync \
+	&& apk del .build-deps \
+	&& rm -Rf /.cache
 
 EXPOSE 8000
 ENTRYPOINT ["pipenv", "run"]
-CMD ["./docker/start_dev.sh"]
+CMD ["./docker/start_prod.sh"]
