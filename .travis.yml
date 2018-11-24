@@ -2,6 +2,8 @@ notifications:
   email: false
 language: python
 python:
-  - "3.5"
-install: "pip install -r requirements.txt"
-script: "flake8 ./main"
+  - "3.7"
+install: 
+  - "pip install pipenv"
+  - "pipenv sync"
+script: "make test"

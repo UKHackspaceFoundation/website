@@ -1,0 +1,22 @@
+version: "3.7"
+services:
+  web:
+    build: 
+      context: "./"
+      target: dev
+    ports:
+      - "8000:8000"
+    environment:
+      DJANGO_SETTINGS_MODULE: "hsf.dev_settings"
+    networks:
+      - hsf
+    depends_on:
+      - db
+    volumes:
+      - .:/usr/src/app
+  db:
+    image: "postgres:9.5"
+    networks:
+      - hsf
+networks:
+  hsf:
