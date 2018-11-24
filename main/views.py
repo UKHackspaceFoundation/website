@@ -392,6 +392,11 @@ class SignupView(CreateView):
         kw['request'] = self.request
         return kw
 
+    def get_initial(self):
+        initial = self.request.session.get('signup_form', {})
+        self.request.session.flush()
+        return initial
+
     def form_valid(self, form):
         obj = form.save(commit=False)
         obj.set_password(User.objects.make_random_password())
@@ -411,6 +416,8 @@ class SignupView(CreateView):
             # This form sends the email on save()
             reset_form.save(**opts)
 
+            form.send_confirmation_email()
+
             return redirect(reverse_lazy('signup-done'))
         except Exception as e:
             # boo - most likely error is ConnectionRefused, but could be others
@@ -420,6 +427,8 @@ class SignupView(CreateView):
                            extra_tags='alert-danger')
             logger.exception("Error in SignupView - unable to send password reset email")
 
+            # store the values we already collected, so we can re-display the form:
+            self.request.session['signup_form'] = form.data
             return redirect(reverse_lazy('signup'))
 
 

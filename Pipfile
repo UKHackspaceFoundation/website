@@ -16,6 +16,7 @@ Django = "== 2.0.9"
 Markdown = "*"
 gocardless_pro = "*"
 psycopg2 = "*"
+django-mathfilters = "*"
 
 [requires]
 python_version = "3.7"
