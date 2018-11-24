@@ -35,6 +35,20 @@ If you `Ctrl+c` the process, it'll stop the containers. If you run
 
 Any emails sent by the app will be printed to the console.
 
+## Tests
+
+To run the linter and tests (such as they are), you can do:
+
+	$ make test
+
+This requires that the local Docker environment is running.
+
+## Shell
+
+To run the Django shell with IPython on your local environment, you can run:
+
+	$ make shell
+
 ## Managing Dependencies
 
 This app uses [Pipenv](https://pipenv.readthedocs.io) to manage dependencies. If you want
