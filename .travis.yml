@@ -6,5 +6,5 @@ python:
   - "3.7"
 install: 
   - "pip install pipenv"
-  - "pipenv sync"
+  - "pipenv sync --dev"
 script: "make test"
