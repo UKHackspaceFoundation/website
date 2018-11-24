@@ -35,7 +35,7 @@ class SupporterMembershipManager(models.Manager):
     def get_membership_status(self, user):
         try:
             return self.get_membership(user).status
-        except SupporterMembership.DoesNotExist as e:
+        except SupporterMembership.DoesNotExist:
             return 'None'
 
 
@@ -88,7 +88,7 @@ class SupporterMembership(models.Model):
     def has_active_mandate(self):
         try:
             return self.mandate().status != ''
-        except GocardlessMandate.DoesNotExist as e:
+        except GocardlessMandate.DoesNotExist:
             return False
 
     # get mandate status or throw DoesNotExist
@@ -202,7 +202,7 @@ class SupporterMembership(models.Model):
             self.approval_request_count += 1
             self.save()
 
-        except Exception as e:
+        except Exception:
             # TODO: oh dear - how should we handle this gracefully?!?
             logger.exception("Error in send_approval_request - failed to send email",
                              extra={'SupporterMembership': self})
@@ -229,7 +229,7 @@ class SupporterMembership(models.Model):
             msg.send()
 
             return True
-        except Exception as e:
+        except Exception:
             logger.exception("Error in send_application_decision - unable to send email",
                              extra={'membership application': self})
             return False

@@ -60,7 +60,7 @@ class GocardlessMandateManager(models.Manager):
             obj.save()
             return obj
 
-        except Exception as e:
+        except Exception:
             logger.exception("Exception creating payment", extra={'payload': payload})
             return None
 
@@ -85,12 +85,12 @@ class GocardlessMandateManager(models.Manager):
                 mandate.status = info.status
                 mandate.save()
 
-            except GocardlessMandate.DoesNotExist as e:
+            except GocardlessMandate.DoesNotExist:
                 # shouldn't happen - just flag the error for now
                 # TODO: perhaps send an email to admin?
                 logger.exception("Mandate object not found", extra={'event': event})
 
-        except Exception as e:
+        except Exception:
             # odd - this should always be possible, perhaps there was a connection error
             logger.error("Exception fetching mandate info", extra={'event': event})
 
@@ -160,7 +160,7 @@ class GocardlessMandate(models.Model):
 
             return True
 
-        except Exception as e:
+        except Exception:
             logger.exception("Error in GocardlessMandate.cancel", extra={'mandate': self})
             return False
 
@@ -205,7 +205,7 @@ class GocardlessMandate(models.Model):
 
             return obj
 
-        except Exception as e:
+        except Exception:
             logger.exception("Error in GocardlessMandate.create_payment", extra={'mandate': self})
             return None
 

@@ -47,7 +47,7 @@ class GocardlessPaymentManager(models.Manager):
             obj.save()
             return obj
 
-        except Exception as e:
+        except Exception:
             logger.exception("Exception creating payment", extra={'payload': payload})
             return None
 
@@ -76,12 +76,12 @@ class GocardlessPaymentManager(models.Manager):
                 payment.description = event['details']['description']
                 payment.save()
 
-            except GocardlessPayment.DoesNotExist as e:
+            except GocardlessPayment.DoesNotExist:
                 # odd...  log error
                 # TODO: perhaps email admin to flag issue
                 logger.exception("Payment object not found", extra={'event': event})
 
-        except Exception as e:
+        except Exception:
             # odd - this should always be possible, perhaps there was a connection error
             logger.exception("Exception fetching payment info", extra={'event': event})
 

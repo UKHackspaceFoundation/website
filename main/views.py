@@ -204,14 +204,14 @@ def join_supporter_step2(request):
                 # redirect to step 3:
                 return redirect(reverse('join_supporter_step3'))
 
-        except GocardlessMandate.DoesNotExist as e:
+        except GocardlessMandate.DoesNotExist:
             # if not, continue...
             pass
 
         # redirect user to create a new mandate
         return redirect(ma.get_redirect_flow_url(request))
 
-    except SupporterMembership.DoesNotExist as e:
+    except SupporterMembership.DoesNotExist:
         # odd, user does not have an active membership application - send them to step1
         logger.error("Error in join_supporter_step2 - user does not have a membership application",
                      extra={'user': request.user})
@@ -231,7 +231,7 @@ def join_supporter_step3(request):
             mandate = ma.mandate()
             logger.info("Found existing mandate: {}".format(mandate.id))
 
-        except GocardlessMandate.DoesNotExist as e:
+        except GocardlessMandate.DoesNotExist:
             # if not, complete the flow and create a new mandate record
             logger.info("No existing mandate, completing redirect flow")
             mandate = ma.complete_redirect_flow(request)
@@ -243,7 +243,7 @@ def join_supporter_step3(request):
         # finally, render the completion page
         return render(request, 'join_supporter/supporter_step3.html')
 
-    except SupporterMembership.DoesNotExist as e:
+    except SupporterMembership.DoesNotExist:
         # odd, user does not have an active membership application - send them to step1
         logger.error("Error in join_supporter_step3 - user does not have a membership application",
                      extra={'user': request.user})
@@ -371,7 +371,7 @@ def new_space(request):
 
                 messages.info(request, "Thanks - we'll get that space added to the map ")
                 return redirect(reverse('new_space'))
-    except Exception as e:
+    except Exception:
         messages.error(request, "Error dealing with submission, please try again", extra_tags='alert-danger')
         logger.exception("Error in new_space - exception")
 
@@ -456,7 +456,7 @@ def space_approval(request, key, action):
         }
         return render(request, 'user_space_verification/space_approval.html', context)
 
-    except User.DoesNotExist as e:
+    except User.DoesNotExist:
         # aargh - that's not right - redirect to home
         return redirect(reverse_lazy('index'))
 
