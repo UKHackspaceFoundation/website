@@ -6,10 +6,18 @@ cache: pip
 services:
   - postgresql
 env:
-  - DJANGO_SETTINGS_MODULE=hsf.test_settings
+  global:
+    - DJANGO_SETTINGS_MODULE=hsf.test_settings
+    - DOCKER_USERNAME=russss
+    - secure: jTKBvUjIx4Qf0itpKDyuYkaBcpKHon8vtoMGB+DVDYuh0L7K47CyH62jD2Rwbl6eoGzN58N+LjjdT97Sl81jcVd7aHCqTqM5khqHiGHAupeAQEVNP6V5tz1U7HO2AICNTVwToRTRVPDHruwUQmmMR3bzs3oMo3zpKtWXymr032Z7UGtvALocMPvAsvL8oGZdnNofdHUsSY/VwMPUi9Jup33p8uDRlU6stX+wJVoQCdS8WbkhgESf9CdljCjfTsjYReYk7c49Fedhy5Vs+QppCEF5WhQpvQ6vUOCUY5zNo0ZQgTv2HekSXNYzyrVdPh/R4A+BtKETTW3jmzXqv/bPrzbi8RC+t/Ssflh7esPjICL+jim4qrvWHVoSJB9p5S4+qTnrlsL7YX7aAcSyiYFBhdjSfV7OKL3Qu0JWvV27ACzn81hP/tdBhyK29z8egmaLCRu3ZqhvRwsqA1noD+U+FW8ZpFfXiTOd3Aa3b0Zfll78jxa8mg6Oug+ydgZQt1Bz621P7d01Nn8g3ONxFS4Cnug0LSZZ8CklT6UsPyPTOGj9GS0VAbUlBV2csQrqQxHmxU6QvYjlIT6xGkRlvuqNHzttSWvZDSVvifVxOMMnZhYAR6xUg42Azi0uB9iXZPHT+pWaFG08Ga3rlN2iN4gc2TF6qCiTDtM6MwWV/Noir+U=
 python:
-  - "3.7"
-install: 
-  - "pip install pipenv"
-  - "pipenv sync --dev"
-script: "make ci"
+  - '3.7'
+install:
+  - pip install pipenv
+  - pipenv sync --dev
+script: make ci
+deploy:
+  provider: script
+  script: make deploy
+  on:
+    branch: master
