@@ -16,8 +16,7 @@ need Docker and docker-compose installed locally (install it
 
 Copy `hsf/dev_settings.py.example` to `hsf/dev_settings.py`.
 
-If you want to test payments, visit https://manage-sandbox.gocardless.com/signup to
-create a GoCardless sandbox account. Create an access token and set it in dev_settings.py
+If you want to test GoCardless payments, [there are instructions here](docs/gocardless.md).
 
 ## Starting the App
 
