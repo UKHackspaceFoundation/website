@@ -18,8 +18,6 @@ install:
 script: make ci
 deploy:
   provider: script
-  script: 
-    - ./docker/docker_login.sh
-    - make deploy
+  script: "./docker/docker_login.sh && make deploy"
   on:
     branch: master

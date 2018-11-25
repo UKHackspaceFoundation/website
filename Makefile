@@ -13,6 +13,5 @@ shell:
 	$(DOCKER_RUN) ./manage.py shell
 
 deploy:
-	echo "$(DOCKER_PASSWORD)" | docker login -u "$(DOCKER_USERNAME)" --password-stdin
 	docker build . -f ./Dockerfile.prod -t ukhackspacefoundation/website:latest
 	docker push ukhackspacefoundation/website:latest
