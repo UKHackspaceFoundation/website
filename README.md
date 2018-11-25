@@ -75,3 +75,7 @@ To update all dependencies to their latest versions:
 
 Once you've updated dependencies, you'll need to rebuild the Docker image by re-running
 `docker-compose up --build` (you don't need to run `docker-compose down`).
+
+# Deployment
+
+See [docs/deployment.md](docs/deployment.md) for deployment info.
