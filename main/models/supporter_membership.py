@@ -15,7 +15,6 @@ from .gocardless import get_gocardless_client
 logger = logging.getLogger(__name__)
 
 
-
 class SupporterMembershipManager(models.Manager):
     # get all membership records for user
     def get_memberships(self, user):
@@ -272,8 +271,6 @@ class SupporterMembership(models.Model):
             self.started_at = payment.payout_date
 
             # update expired_at when new payment received
-            print(payment.payout_date)
-            print(timedelta(days=365))
             self.expired_at = payment.payout_date + timedelta(days=365)
 
             self.save()

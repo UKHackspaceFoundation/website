@@ -1,7 +1,5 @@
 from django.db import models
-from django.conf import settings
 from django.utils import timezone
-import gocardless_pro
 import logging
 import uuid
 from .gocardless_payment import GocardlessPayment

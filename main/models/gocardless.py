@@ -1,6 +1,7 @@
 from django.conf import settings
 import gocardless_pro
 
+
 # utility functions:
 def get_gocardless_client():
     if not getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None) or not getattr(

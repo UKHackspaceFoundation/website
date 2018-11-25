@@ -1,5 +1,4 @@
 from django.db import models
-from django.conf import settings
 from django.utils import timezone
 import logging
 
@@ -60,8 +59,6 @@ class GocardlessPaymentManager(models.Manager):
             try:
                 payment = super(GocardlessPaymentManager, self).get_queryset().get(
                     id=event['links']['payment'])
-
-                print(repr(info))
 
                 # save changes to object - this will also trigger internal handling
                 payment.status = info.status
