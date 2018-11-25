@@ -1,8 +1,7 @@
-To deploy, you'll need access to the [Docker Hub team](https://hub.docker.com/u/ukhackspacefoundation/).
+Successful builds on the master branch will be automatically built into a
+docker image and pushed to Docker Hub by Travis.
 
-Run `make deploy` to build a production Docker image and upload it to Docker Hub.
-
-On the web server:
+To deploy this image on the web server:
 
 	# cd /root/hsf_website
 	# docker pull ukhackspacefoundation/website:latest
