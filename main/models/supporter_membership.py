@@ -4,25 +4,16 @@ from django.core.mail import EmailMessage
 from django.template.loader import get_template
 from django.urls import reverse
 from django.utils import timezone
-import gocardless_pro
 import logging
 import uuid
 from .gocardless_mandate import GocardlessMandate
 from datetime import timedelta
 
+from .gocardless import get_gocardless_client
+
 # get instance of a logger
 logger = logging.getLogger(__name__)
 
-
-# utility functions:
-def get_gocardless_client():
-    if not getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None) or \
-            not getattr(settings, "GOCARDLESS_ENVIRONMENT", None):
-        raise Exception("No GoCardless credentials configured")
-    return gocardless_pro.Client(
-        access_token=settings.GOCARDLESS_ACCESS_TOKEN,
-        environment=settings.GOCARDLESS_ENVIRONMENT
-    )
 
 
 class SupporterMembershipManager(models.Manager):
@@ -51,7 +42,7 @@ class SupporterMembership(models.Model):
     )
 
     # application status
-    status = models.CharField(max_length=8, choices=APPROVAL_STATUS_CHOICES, default='Pending')
+    status = models.TextField(choices=APPROVAL_STATUS_CHOICES, default='Pending')
     # how many times have we successfully sent an approval request email:
     approval_request_count = models.IntegerField(default=0)
     # subscription fee (chosen by user)
@@ -67,9 +58,9 @@ class SupporterMembership(models.Model):
     # what user is this associated with:
     user = models.ForeignKey('User', models.CASCADE)
     # gocardless redirect flow id
-    redirect_flow_id = models.CharField(max_length=33, blank=True)
+    redirect_flow_id = models.TextField(blank=True)
     # session token (for redirect flow)
-    session_token = models.CharField(max_length=33, default='')
+    session_token = models.TextField(default='')
 
     objects = SupporterMembershipManager()
 

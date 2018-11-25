@@ -5,17 +5,10 @@ import gocardless_pro
 import logging
 import uuid
 from .gocardless_payment import GocardlessPayment
+from .gocardless import get_gocardless_client
 
 # get instance of a logger
 logger = logging.getLogger(__name__)
-
-
-# utility functions:
-def get_gocardless_client():
-    return gocardless_pro.Client(
-        access_token=getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
-        environment=getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
-    )
 
 
 class GocardlessMandateManager(models.Manager):
@@ -98,13 +91,13 @@ class GocardlessMandateManager(models.Manager):
 
 
 class GocardlessMandate(models.Model):
-    id = models.CharField(max_length=16, unique=True, primary_key=True)
+    id = models.TextField(unique=True, primary_key=True)
     created_at = models.DateTimeField(default=timezone.now)
-    reference = models.CharField(max_length=10, blank=True)
-    status = models.CharField(max_length=26, blank=True)
-    creditor_id = models.CharField(max_length=16, blank=True)
-    customer_id = models.CharField(max_length=16, blank=True)
-    customer_bank_account_id = models.CharField(max_length=16, blank=True)
+    reference = models.TextField(blank=True)
+    status = models.TextField(blank=True)
+    creditor_id = models.TextField(blank=True)
+    customer_id = models.TextField(blank=True)
+    customer_bank_account_id = models.TextField(blank=True)
     # which Supporter membership is this mandate associated with (or null)
     supporter_membership = models.ForeignKey('SupporterMembership', models.CASCADE, null=True)
     # which Space Membership is this mandate associated with (or null)
