@@ -27,6 +27,7 @@ urlpatterns = [
     url(r'^new-space$', views.new_space, name='new_space'),
     url(r'^resources/(?P<path>.*)$', views.resources, name='resources'),
     url(r'^signup$', views.SignupView.as_view(), name='signup'),
+    url(r'^supporters$', views.supporters, name='supporters'),
     url(r'^spaces.json$', views.spaces, name='spaces'),
     url(r'^spaces.geojson$', views.geojson, name='geojson'),
     url(r'^space_detail$', views.space_detail, name='space_detail'),

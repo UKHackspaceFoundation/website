@@ -106,6 +106,10 @@ def spaces(request):
     return JsonResponse(Space.objects.as_json())
 
 
+def supporters(request):
+    return render(request, 'main/supporters.html')
+
+
 @login_required
 def gitinfo(request):
     context = {

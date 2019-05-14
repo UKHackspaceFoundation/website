@@ -241,3 +241,12 @@ dd h3 {
     margin-top: -5px;
     margin-right: -10px;
 }
+
+.supporter-logo {
+    display: inline-block;
+    margin: 30px;
+}
+
+.supporter-logo img {
+    max-height: 80px;
+}
