@@ -15,10 +15,10 @@
     <p>Supporter members are full, voting members of the Foundation, however the voting power of all
        supporter members is capped at 20%, with 80% of voting power with Member Spaces.</p>
 
-    <p>The membership fee for a Supporter Member is pay-what-you-want, with a minimum of £10 per year, collected by Direct Debit (via GoCardless). Admission as a
-       supporter member is at the discretion of the Board.</p>
+    <p>The membership fee for a Supporter Member is a minimum of £10 per year, collected by
+       Direct Debit. Admission as a supporter member is at the discretion of the Board.</p>
 
-    <p>You can read more about the Hackspace Foundation <a href="{% url 'foundation' path='structure.md' %}">organisational structure here.</a></p>
+    <p>You can read more about the Hackspace Foundation's <a href="{% url 'foundation' path='structure.md' %}">organisational structure here.</a></p>
 
     <div class="alert alert-info">
         <div class="">
@@ -29,7 +29,7 @@
                 {% csrf_token %}
 
                 <p>To continue your application, please review/amend your annual 
-                   Subscription Fee below (minimum of &pound;10):</p>
+                   subscription fee below (minimum of &pound;10):</p>
 
                 <div class="form-group">
                     <label for="inputEmail" class="col-sm-4 control-label">Subscription Fee</label>
@@ -58,7 +58,9 @@
                     </div>
                 </div>
 
-                <p>Click the button below to initiate the application - you will then be guided through setting up a Direct Debit mandate.  Please note - no payments will be arranged until your application has been approved.</p>
+                <p>Click the button below to start your application. 
+                    You will be guided through setting up a Direct Debit mandate. 
+                    Please note no money will be taken until your application has been approved.</p>
 
                 <div class="form-group">
                     <div class="col-sm-offset-4 col-sm-8">
