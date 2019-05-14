@@ -16,7 +16,7 @@ django-widget-tweaks = "*"
 Django = "== 2.0.9"
 Markdown = "*"
 gocardless_pro = "*"
-psycopg2 = "*"
+psycopg2-binary = "*"
 django-mathfilters = "*"
 
 [requires]
