@@ -11,7 +11,7 @@ from django.views.generic.edit import CreateView
 from .models import Space, SupporterMembership, GocardlessMandate, GocardlessPayment
 from .forms import CustomUserCreationForm, SupporterMembershipForm, NewSpaceForm
 from django.contrib.auth.forms import PasswordResetForm
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, AccessMixin
 from django.utils.decorators import method_decorator
 import requests
 import markdown
@@ -78,7 +78,7 @@ class UserUpdate(LoginRequiredMixin, UpdateView):
         return self.request.user
 
 
-class SpaceUpdate(LoginRequiredMixin, UpdateView):
+class SpaceUpdate(AccessMixin, UpdateView):
     model = Space
     fields = ['name', 'status', 'main_website_url', 'email', 'have_premises',
               'address_first_line', 'town', 'region', 'postcode', 'country',
@@ -94,6 +94,8 @@ class SpaceUpdate(LoginRequiredMixin, UpdateView):
         return context
 
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
         # make sure users have space_status='Approved'
         if self.request.user.space_status != 'Approved':
             # otherwise redirect to profile
@@ -168,12 +170,14 @@ def join(request):
     return render(request, 'join/join.html')
 
 
-class JoinSupporterStep1(LoginRequiredMixin, CreateView):
+class JoinSupporterStep1(AccessMixin, CreateView):
     form_class = SupporterMembershipForm
     success_url = reverse_lazy('join_supporter_step2')
     template_name = 'join_supporter/step1.html'
 
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
         # if user already has an active membership then return to profile page
         if request.user.supporter_status() == 'Pending' or request.user.supporter_status() == 'Approved':
             messages.error(request, 'You already have an active membership', extra_tags='alert-danger')
