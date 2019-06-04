@@ -22,14 +22,15 @@
 
     <div class="alert alert-info">
         <div class="">
-
+            
             {{ form.non_field_errors }}
 
             <form method="POST" class="form-horizontal">
                 {% csrf_token %}
 
-                <p>To continue your application, please review/amend your annual 
-                   subscription fee below (minimum of &pound;10):</p>
+                <p>Please complete this form to start your application.
+                    On the next screen you will be guided through setting up a Direct Debit mandate. 
+                    Please note no money will be taken until your application has been approved.</p>
 
                 <div class="form-group">
                     <label for="inputEmail" class="col-sm-4 control-label">Subscription Fee</label>
@@ -39,12 +40,14 @@
                                 <div class="alert alert-sm alert-danger">{{ error|escape }}</div>
                             {% endfor %}
                         {% endif %}
-                        {% render_field form.fee class+="form-control" %}
+                        <div class="input-group">
+                            {% render_field form.fee class+="form-control" %}
+                            <span class="input-group-addon" id="basic-addon1">&pound;</span>
+                        </div>
                     </div>
                 </div>
 
-                <p>Please provide a short note to the Board explaining your reasons for
-                   applying and relevant experience:</p>
+                <p class="col-sm-8 col-sm-offset-4">Please review/amend your annual subscription fee (minimum of &pound;10).</p>
 
                 <div class="form-group">
                     <label for="inputEmail" class="col-sm-4 control-label">Note to the Board</label>
@@ -58,13 +61,12 @@
                     </div>
                 </div>
 
-                <p>Click the button below to start your application. 
-                    You will be guided through setting up a Direct Debit mandate. 
-                    Please note no money will be taken until your application has been approved.</p>
+                <p class="col-sm-8 col-sm-offset-4">Please provide a short note to the Board explaining your reasons for
+                   applying and relevant experience.</p>
 
                 <div class="form-group">
                     <div class="col-sm-offset-4 col-sm-8">
-                        <button type="submit" class="btn btn-success">Continue with Application</button>
+                        <button type="submit" class="btn btn-success">Continue to setup Direct Debit <span class="glyphicon glyphicon-chevron-right"></span></button>
                     </div>
                 </div>
             </form>
