@@ -104,6 +104,9 @@ class CustomUserCreationForm(ModelForm):
                 # TODO: oh dear - how should we handle this gracefully?!?
                 print("Error sending email" + str(e))
 
+            user.space_status = 'Emailed'
+            user.save()
+
 
 class SupporterMembershipForm(ModelForm):
     class Meta:

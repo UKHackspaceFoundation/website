@@ -77,6 +77,23 @@ class UserUpdate(LoginRequiredMixin, UpdateView):
     def get_object(self, queryset=None):
         return self.request.user
 
+    def form_valid(self, form):
+        obj = form.save(commit=False)
+        obj.save()
+
+        try:
+            form.send_confirmation_email()
+
+            return redirect(reverse_lazy('profile'))
+        except Exception as e:
+            # boo - most likely error is ConnectionRefused, but could be others
+            messages.error(self.request, "Error emailing verification link: %s" % e,
+                           extra_tags='alert-danger')
+            logger.exception("Error in UserUpdate - unable to send space confirmation email")
+
+            self.request.session['signup_form'] = form.data
+            return redirect(reverse_lazy('edit-profile'))
+
 
 class SpaceUpdate(AccessMixin, UpdateView):
     model = Space
