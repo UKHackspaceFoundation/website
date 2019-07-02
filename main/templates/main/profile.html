@@ -241,9 +241,27 @@
                         <h3 class="panel-title">{{ user.space.name }}'s Membership</h3>
                     </div>
                     <div class="panel-body">
+                      {% if user.space.current_membership.status  == 'Pending' %}
+                      <div class="alert alert-warning no-margin" style="margin-top:15px">
+                        Your space has already requested to become a Member Space of the Hackspace Foundation, the board will hopefully make a decision soon.
+                      </div>
+                      {% elif user.space.current_membership.status == 'Approved' %}
+                        <p>
+                          Your Space is a Member of the Hackspace Foundation!
+                        </p>
+                        {% if user.space.current_membership.mandate.payment.status != "failed" %}
+                          <p class="alert-success">
+                            Paid: &pound;{{ user.space.current_membership.mandate.payment.amount|div:100|floatformat:2 }} on {{ user.space.current_membership.mandate.payment.charge_date }}
+                          </p>
+                        {% else %}
+                           <p class="alert-danger">
+                             Payment failed - please check you have sufficient funds in your account and try again <a href="{% url 'space-membership-payment' %}" class="btn btn-danger btn-sm">Retry Payment</a>
+                           </p>
+                        {% endif %}
+                      {% else %}
                         <p>If you are able to act as a Representative for your space, you may apply for it to become a Member Space:</p>
-                        <a href="{% url 'join' %}" class="btn btn-success">Apply</a>
-
+                        <a href="{% url 'join_space_step1' %}" class="btn btn-success">Apply</a>
+                      {% endif %}
                     </div>
                 </div>
             {% endif %}

@@ -95,3 +95,7 @@ db.sqlite3
 hsf/dev_settings.py
 
 .*_cache/
+
+
+# Editor save files
+*~

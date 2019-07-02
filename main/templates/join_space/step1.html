@@ -1,0 +1,79 @@
+
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Space Membership{% endblock %}
+
+{% block content %}
+
+<div class="col-md-8">
+    <h2>Join as a Member Space</h2>
+
+    <p>Membership of the Hackspace Foundation is available for 'spaces, providing they are run according to the foundation's <a href="{% url 'foundation' path='define.md' %}">member space definition</a></p>
+
+    <p>If you feel your space <i>mostly</i> fits the definition, feel free to apply and appeal to the directors below.</p>
+
+    <p>A space does not need to have a physical premises to be a member.</p>
+    
+    <p>Member Spaces are full, voting members of the Foundation, the voting power of all space members is capped at 80%, with the remaining 20% being Individual Members.</p>
+
+    <p>The membership fee for a Member Space is a minimum of £20 per year, or 2% of their surplus, collected by Direct Debit. Admission as a member space is at the discretion of the Board.</p>
+
+    <p>You can read more about the Hackspace Foundation's <a href="{% url 'foundation' path='structure.md' %}">organisational structure here.</a></p>
+
+    <div class="alert alert-info">
+        <div class="">
+            
+            {{ form.non_field_errors }}
+
+            <form method="POST" class="form-horizontal">
+                {% csrf_token %}
+
+                <p>Please complete this form to start your application.
+                    On the next screen you will be guided through setting up a Direct Debit mandate. 
+                    Please note no money will be taken until your application has been approved.</p>
+
+                <div class="form-group">
+                    <label for="inputEmail" class="col-sm-4 control-label">Subscription Fee</label>
+                    <div class="col-sm-8">
+                        {% if form.fee.errors %}
+                            {% for error in form.fee.errors %}
+                                <div class="alert alert-sm alert-danger">{{ error|escape }}</div>
+                            {% endfor %}
+                        {% endif %}
+                        <div class="input-group">
+                            {% render_field form.fee class+="form-control" %}
+                            <span class="input-group-addon" id="basic-addon1">&pound;</span>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="col-sm-8 col-sm-offset-4">Please review/amend your annual subscription fee (minimum of &pound;20).</p>
+
+                <div class="form-group">
+                    <label for="inputEmail" class="col-sm-4 control-label">Note to the Board</label>
+                    <div class="col-sm-8">
+                        {% if form.statement.errors %}
+                            {% for error in form.statement.errors %}
+                                <div class="alert alert-sm alert-danger">{{ error|escape }}</div>
+                            {% endfor %}
+                        {% endif %}
+                        {% render_field form.statement class+="form-control" %}
+                    </div>
+                </div>
+
+                <p class="col-sm-8 col-sm-offset-4">Please provide links to a document (or documents) on how your space is run, together with any exceptions you are claiming.</p>
+
+                <div class="form-group">
+                    <div class="col-sm-offset-4 col-sm-8">
+                        <button type="submit" class="btn btn-success">Continue to setup Direct Debit <span class="glyphicon glyphicon-chevron-right"></span></button>
+                    </div>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

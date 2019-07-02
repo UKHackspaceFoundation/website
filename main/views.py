@@ -8,8 +8,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.edit import CreateView
-from .models import Space, SupporterMembership, GocardlessMandate, GocardlessPayment
-from .forms import CustomUserCreationForm, SupporterMembershipForm, NewSpaceForm
+from .models import Space, SupporterMembership, GocardlessMandate, GocardlessPayment, SpaceMembership
+from .forms import CustomUserCreationForm, SupporterMembershipForm, SpaceMembershipForm, NewSpaceForm
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.mixins import LoginRequiredMixin, AccessMixin
 from django.utils.decorators import method_decorator
@@ -191,6 +191,138 @@ def join(request):
     return render(request, 'join/join.html')
 
 
+class JoinSpaceStep1(AccessMixin, CreateView):
+    form_class = SpaceMembershipForm
+    success_url = reverse_lazy('join_space_step2')
+    template_name = 'join_space/step1.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        # if user doesn't have a space then return to profile page
+        if request.user.member_type is None:
+            messages.error(request, 'You can\'t apply for a space membership when you\'re not attached to a space', extra_tags='alert-danger')
+            logger.error("Error in JoinSupporterStep1 - user has no space",
+                         extra={'user': request.user})
+            return redirect(reverse('profile'))
+        elif request.user.space.membership_status() == 'Pending' or request.user.space.membership_status() == 'Approved':
+            messages.error(request, 'Your space has already applied for a space membership', extra_tags='alert-danger')
+            logger.error("Error in JoinSpaceStep1 - user\'s space has an existing membership",
+                         extra={'user': request.user})
+            return redirect(reverse('profile'))
+
+        return super(JoinSpaceStep1, self).dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        # hook up the new application to the current user
+        form.instance.applied_by = self.request.user
+        form.instance.space = self.request.user.space
+        return super().form_valid(form)
+
+@login_required
+def join_space_step2(request):
+    try:
+        # get membership application
+        ma = request.user.space.current_membership()
+
+        try:
+            # see if the application already has a mandate
+            mandate = ma.mandate()
+
+            # if it's active...
+            if mandate.is_active():
+                # redirect to step 3:
+                return redirect(reverse('join_space_step3'))
+
+        except GocardlessMandate.DoesNotExist:
+            # if not, continue...
+            pass
+
+        # redirect user to create a new mandate
+        return redirect(ma.get_redirect_flow_url(request))
+
+    except SpaceMembership.DoesNotExist:
+        # odd, space does not have an active membership application - send them to step1
+        logger.error("Error in join_space_step2 - space does not have a membership application",
+                     extra={'user.space': request.user.space})
+        return redirect(reverse('join_space_step1'))
+
+
+@login_required
+def join_space_step3(request):
+
+    try:
+        # get membership application
+        ma = request.user.space.current_membership()
+        mandate = None
+
+        try:
+            # see if the application already has a mandate
+            mandate = ma.mandate()
+            logger.info("Found existing mandate: {}".format(mandate.id))
+
+        except GocardlessMandate.DoesNotExist:
+            # if not, complete the flow and create a new mandate record
+            logger.info("No existing mandate, completing redirect flow")
+            mandate = ma.complete_redirect_flow(request)
+
+        # now do the email approval stuff
+        logger.info("Sending space membership approval request email")
+        ma.send_approval_request(request)
+
+        # finally, render the completion page
+        return render(request, 'join_space/space_step3.html')
+
+    except SpaceMembership.DoesNotExist:
+        # odd, space does not have an active membership application - send them to step1
+        logger.error("Error in join_space_step3 - space does not have a membership application",
+                     extra={'space': request.user.space})
+        return redirect(reverse('join_space_step1'))
+
+@staff_member_required(login_url='/login')
+def space_membership_approval(request, session_token, action):
+    if action != 'approve' and action != 'reject':
+        # this shouldn't happen
+        logger.error("Error in space_approval - unexpected action: %s", action,
+                     extra={'user': request.user})
+        return redirect(reverse('error'))
+
+    try:
+        # lookup membership application based on session_token
+        ma = SpaceMembership.objects.get(session_token=session_token)
+
+        # apply approval action
+        error = False
+        if action == 'approve':
+            error = not ma.approve()
+        else:
+            error = not ma.reject()
+
+        if error:
+            messages.error(request, "Error - " + ma.space.name + " appears to have already been " +
+                           ma.status, extra_tags='alert-danger')
+            return redirect(reverse('error'))
+
+        # thank the approver/reviewer for their response
+        context = {
+            'first_name': ma.applied_by.first_name,
+            'last_name': ma.applied_by.last_name,
+            'space_name': ma.space.name,
+            'email': ma.applied_by.email,
+            'action': ('approving' if action == 'approve' else 'rejecting')
+        }
+        return render(request, 'join_space/space_approval.html', context)
+
+    except Exception as e:
+        # unknown/invalid membership application
+        logger.error("Error in space_approval: %s", e, extra={
+            'user': request.user,
+            'session_token': session_token,
+            'action': action
+        })
+        messages.error(request, "Error in space_approval: %s" % e, extra_tags='alert-danger')
+        return redirect(reverse('error'))
+
 class JoinSupporterStep1(AccessMixin, CreateView):
     form_class = SupporterMembershipForm
     success_url = reverse_lazy('join_supporter_step2')
@@ -200,7 +332,7 @@ class JoinSupporterStep1(AccessMixin, CreateView):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
         # if user already has an active membership then return to profile page
-        if request.user.supporter_status() == 'Pending' or request.user.supporter_status() == 'Approved':
+        if request.user.supporter_status() == 'Pending' or request.user.supporter_status() == 'Approved' or request.user.supporter_status() == 'Emailed':
             messages.error(request, 'You already have an active membership', extra_tags='alert-danger')
             logger.error("Error in JoinSupporterStep1 - user has an existing membership",
                          extra={'user': request.user})
@@ -212,6 +344,24 @@ class JoinSupporterStep1(AccessMixin, CreateView):
         # hook up the new application to the current user
         form.instance.user = self.request.user
         return super().form_valid(form)
+
+@login_required
+def space_membership_payment(request):
+    # request new payment and return to profile
+
+    try:
+        # lookup membership application based on session_token
+        ma = SpaceMembership.objects.get_membership(request.user)
+
+        # attempt to request new payment
+        ma.request_payment()
+
+        messages.info(request, "Payment requested", extra_tags='alert-success')
+
+    except Exception as e:
+        messages.error(request, "Error in supporter_approval: %s" % e, extra_tags='alert-danger')
+
+    return redirect(reverse('profile'))
 
 
 @login_required
@@ -262,7 +412,7 @@ def join_supporter_step3(request):
             mandate = ma.complete_redirect_flow(request)
 
         # now do the email approval stuff
-        logger.info("Sending approval request email")
+        logger.info("Sending individual member approval request email")
         ma.send_approval_request(request)
 
         # finally, render the completion page

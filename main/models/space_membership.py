@@ -46,7 +46,7 @@ class SpaceMembership(models.Model):
     approval_request_count = models.IntegerField(default=0)
     # subscription fee (chosen by space)
     fee = models.DecimalField(max_digits=8, decimal_places=2, default=20.00)
-    # application statement - aka: why i should be a member statement
+    # application statement - aka: why we should be a member statement
     statement = models.TextField(blank=True)
     # when was the application membership created
     created_at = models.DateTimeField(default=timezone.now)
@@ -115,7 +115,7 @@ class SpaceMembership(models.Model):
                 "prefilled_customer": {
                     "given_name": self.applied_by.first_name,
                     "family_name": self.applied_by.last_name,
-                    "company_name": self.name,
+                    "company_name": self.space.name,
                     "email": self.space.email
                 }
             }
@@ -168,17 +168,17 @@ class SpaceMembership(models.Model):
 
         # build context
         d = {
-            'email': self.space.email,
+            'email': self.applied_by.email,
             'first_name': self.applied_by.first_name,
             'last_name': self.applied_by.last_name,
             'space_name': self.space.name,
             'note': self.statement,
             'fee': self.fee,
             'approve_url': request.build_absolute_uri(
-                reverse('space-approval',
+                reverse('space-membership-approval',
                         kwargs={'session_token': self.session_token, 'action': 'approve'})),
             'reject_url': request.build_absolute_uri(
-                reverse('space-approval',
+                reverse('space-membership-approval',
                         kwargs={'session_token': self.session_token, 'action': 'reject'}))
         }
 
@@ -209,7 +209,7 @@ class SpaceMembership(models.Model):
         htmly = get_template('join_space/space_decision_email.html')
 
         d = {
-            'email': self.space.email,
+            'email': self.applied_by.email,
             'first_name': self.applied_by.first_name,
             'last_name': self.applied_by.last_name,
             'space_name': self.space.name,
@@ -219,10 +219,11 @@ class SpaceMembership(models.Model):
 
         subject = "Hackspace Foundation Membership Application"
         from_email = getattr(settings, "BOARD_EMAIL", None)
-        to = self.space.email
+        to = self.applied_by.email
+        cc = self.space.email
         message = htmly.render(d)
         try:
-            msg = EmailMessage(subject, message, to=[to], from_email=from_email)
+            msg = EmailMessage(subject, message, to=[to], cc=[cc], from_email=from_email)
             msg.content_subtype = 'html'
             msg.send()
 
