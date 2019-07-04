@@ -29,6 +29,10 @@ in the console. Once it's running, you should now be able to access your develop
 [http://localhost:8000](http://localhost:8000). Any changes you make to your development
 copy should be automatically reloaded.
 
+If you need to run it on another port, edit the `docker-compose.yml` and change the first port, keep the second the same as this is the port docker is using internally, example:
+
+    - "8080:8000"
+
 If you `Ctrl+c` the process, it'll stop the containers. If you run
 `docker-compose down`, it'll destroy the containers *along with your development database*.
 
@@ -57,6 +61,10 @@ u = User.objects.all()[0]
 u.is_staff = True
 u.save()
 ```
+
+## Import some spaces
+
+The repository has a static file: static/data.json containing details on some spaces (is unlikely to be uptodate!), to import it as a starting set, visit [http://localhost:8000/import_spaces](http://localhost:8000/import_spaces) after you have made your user an admin.
 
 ## Managing Dependencies
 

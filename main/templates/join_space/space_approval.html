@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Member Space Approval{% endblock %}
+
+{% block content %}
+<h2>Member Space Approval</h2>
+
+<p>Thank you for <b>{{ action }}</b> {{ space_name }}'s application for Membership.</p>
+
+{% if action == 'rejecting' %}
+    <p>Please don't forget to contact {{ space_name }} directly and explain the reason(s) for {{ action }} - <a href="mailto:{{ email }}">{{ email }}</a></p>
+{% endif %}
+
+{% endblock %}

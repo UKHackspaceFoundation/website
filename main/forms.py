@@ -1,6 +1,6 @@
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
-from .models import User, SupporterMembership
+from .models import User, SupporterMembership, SpaceMembership
 from django.utils import timezone
 from django.core.mail import EmailMessage
 from django.template.loader import get_template
@@ -104,6 +104,9 @@ class CustomUserCreationForm(ModelForm):
                 # TODO: oh dear - how should we handle this gracefully?!?
                 print("Error sending email" + str(e))
 
+            user.space_status = 'Emailed'
+            user.save()
+
 
 class SupporterMembershipForm(ModelForm):
     class Meta:
@@ -118,6 +121,29 @@ class SupporterMembershipForm(ModelForm):
         data = self.cleaned_data['fee']
         if data < 10:
             raise forms.ValidationError("Minimum £10.00")
+        return data
+
+    # ensure statement is not empty
+    def clean_statement(self):
+        data = self.cleaned_data['statement']
+        if data == "":
+            raise forms.ValidationError("Please write at least a few words :)")
+        return data
+
+
+class SpaceMembershipForm(ModelForm):
+    class Meta:
+        model = SpaceMembership
+        fields = ('fee', 'statement')
+        widgets = {
+            'fee': forms.NumberInput(attrs={'step': 0.25, 'min': 20.0})
+        }
+
+    # ensure fee is not less than £20.00
+    def clean_fee(self):
+        data = self.cleaned_data['fee']
+        if data < 20:
+            raise forms.ValidationError("Minimum £20.00")
         return data
 
     # ensure statement is not empty

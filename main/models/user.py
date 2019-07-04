@@ -48,6 +48,7 @@ class User(AbstractUser):
     APPROVAL_STATUS_CHOICES = (
         ("Blank", "Blank"),   # space is blank
         ("Pending", "Pending"),  # space relationship has changed, approval is pending
+        ("Emailed", "Emailed"),  # approval request sent
         ("Approved", "Approved"),  # space relationship has been approved
         ("Rejected", "Rejected"),  # space relationship has been rejected
     )
