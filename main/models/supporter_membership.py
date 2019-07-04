@@ -4,22 +4,15 @@ from django.core.mail import EmailMessage
 from django.template.loader import get_template
 from django.urls import reverse
 from django.utils import timezone
-import gocardless_pro
 import logging
 import uuid
 from .gocardless_mandate import GocardlessMandate
 from datetime import timedelta
 
+from .gocardless import get_gocardless_client
+
 # get instance of a logger
 logger = logging.getLogger(__name__)
-
-
-# utility functions:
-def get_gocardless_client():
-    return gocardless_pro.Client(
-        access_token=getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
-        environment=getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
-    )
 
 
 class SupporterMembershipManager(models.Manager):
@@ -35,7 +28,7 @@ class SupporterMembershipManager(models.Manager):
     def get_membership_status(self, user):
         try:
             return self.get_membership(user).status
-        except SupporterMembership.DoesNotExist as e:
+        except SupporterMembership.DoesNotExist:
             return 'None'
 
 
@@ -48,7 +41,7 @@ class SupporterMembership(models.Model):
     )
 
     # application status
-    status = models.CharField(max_length=8, choices=APPROVAL_STATUS_CHOICES, default='Pending')
+    status = models.TextField(choices=APPROVAL_STATUS_CHOICES, default='Pending')
     # how many times have we successfully sent an approval request email:
     approval_request_count = models.IntegerField(default=0)
     # subscription fee (chosen by user)
@@ -64,9 +57,9 @@ class SupporterMembership(models.Model):
     # what user is this associated with:
     user = models.ForeignKey('User', models.CASCADE)
     # gocardless redirect flow id
-    redirect_flow_id = models.CharField(max_length=33, blank=True)
+    redirect_flow_id = models.TextField(blank=True)
     # session token (for redirect flow)
-    session_token = models.CharField(max_length=33, default='')
+    session_token = models.TextField(default='')
 
     objects = SupporterMembershipManager()
 
@@ -88,7 +81,7 @@ class SupporterMembership(models.Model):
     def has_active_mandate(self):
         try:
             return self.mandate().status != ''
-        except GocardlessMandate.DoesNotExist as e:
+        except GocardlessMandate.DoesNotExist:
             return False
 
     # get mandate status or throw DoesNotExist
@@ -202,7 +195,7 @@ class SupporterMembership(models.Model):
             self.approval_request_count += 1
             self.save()
 
-        except Exception as e:
+        except Exception:
             # TODO: oh dear - how should we handle this gracefully?!?
             logger.exception("Error in send_approval_request - failed to send email",
                              extra={'SupporterMembership': self})
@@ -229,7 +222,7 @@ class SupporterMembership(models.Model):
             msg.send()
 
             return True
-        except Exception as e:
+        except Exception:
             logger.exception("Error in send_application_decision - unable to send email",
                              extra={'membership application': self})
             return False
@@ -278,8 +271,6 @@ class SupporterMembership(models.Model):
             self.started_at = payment.payout_date
 
             # update expired_at when new payment received
-            print(payment.payout_date)
-            print(timedelta(days=365))
             self.expired_at = payment.payout_date + timedelta(days=365)
 
             self.save()

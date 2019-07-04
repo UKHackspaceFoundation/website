@@ -1,9 +1,0 @@
-Django==1.11
-gunicorn==19.6.0
-markdown==2.6.8
-python-telegram-bot==5.3.0
-requests==2.13.0
-dealer==2.0.5
-flake8==3.3.0
-django-widget-tweaks==1.4.1
-gocardless-pro==0.3.0

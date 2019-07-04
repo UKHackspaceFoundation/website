@@ -11,7 +11,7 @@ from django.views.generic.edit import CreateView
 from .models import Space, SupporterMembership, GocardlessMandate, GocardlessPayment
 from .forms import CustomUserCreationForm, SupporterMembershipForm, NewSpaceForm
 from django.contrib.auth.forms import PasswordResetForm
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, AccessMixin
 from django.utils.decorators import method_decorator
 import requests
 import markdown
@@ -78,7 +78,7 @@ class UserUpdate(LoginRequiredMixin, UpdateView):
         return self.request.user
 
 
-class SpaceUpdate(LoginRequiredMixin, UpdateView):
+class SpaceUpdate(AccessMixin, UpdateView):
     model = Space
     fields = ['name', 'status', 'main_website_url', 'email', 'have_premises',
               'address_first_line', 'town', 'region', 'postcode', 'country',
@@ -94,6 +94,8 @@ class SpaceUpdate(LoginRequiredMixin, UpdateView):
         return context
 
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
         # make sure users have space_status='Approved'
         if self.request.user.space_status != 'Approved':
             # otherwise redirect to profile
@@ -104,6 +106,10 @@ class SpaceUpdate(LoginRequiredMixin, UpdateView):
 # return space info as json - used for rendering map on homepage
 def spaces(request):
     return JsonResponse(Space.objects.as_json())
+
+
+def supporters(request):
+    return render(request, 'main/supporters.html')
 
 
 @login_required
@@ -168,12 +174,14 @@ def join(request):
     return render(request, 'join/join.html')
 
 
-class JoinSupporterStep1(LoginRequiredMixin, CreateView):
+class JoinSupporterStep1(AccessMixin, CreateView):
     form_class = SupporterMembershipForm
     success_url = reverse_lazy('join_supporter_step2')
     template_name = 'join_supporter/step1.html'
 
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
         # if user already has an active membership then return to profile page
         if request.user.supporter_status() == 'Pending' or request.user.supporter_status() == 'Approved':
             messages.error(request, 'You already have an active membership', extra_tags='alert-danger')
@@ -204,14 +212,14 @@ def join_supporter_step2(request):
                 # redirect to step 3:
                 return redirect(reverse('join_supporter_step3'))
 
-        except GocardlessMandate.DoesNotExist as e:
+        except GocardlessMandate.DoesNotExist:
             # if not, continue...
             pass
 
         # redirect user to create a new mandate
         return redirect(ma.get_redirect_flow_url(request))
 
-    except SupporterMembership.DoesNotExist as e:
+    except SupporterMembership.DoesNotExist:
         # odd, user does not have an active membership application - send them to step1
         logger.error("Error in join_supporter_step2 - user does not have a membership application",
                      extra={'user': request.user})
@@ -231,7 +239,7 @@ def join_supporter_step3(request):
             mandate = ma.mandate()
             logger.info("Found existing mandate: {}".format(mandate.id))
 
-        except GocardlessMandate.DoesNotExist as e:
+        except GocardlessMandate.DoesNotExist:
             # if not, complete the flow and create a new mandate record
             logger.info("No existing mandate, completing redirect flow")
             mandate = ma.complete_redirect_flow(request)
@@ -243,7 +251,7 @@ def join_supporter_step3(request):
         # finally, render the completion page
         return render(request, 'join_supporter/supporter_step3.html')
 
-    except SupporterMembership.DoesNotExist as e:
+    except SupporterMembership.DoesNotExist:
         # odd, user does not have an active membership application - send them to step1
         logger.error("Error in join_supporter_step3 - user does not have a membership application",
                      extra={'user': request.user})
@@ -371,7 +379,7 @@ def new_space(request):
 
                 messages.info(request, "Thanks - we'll get that space added to the map ")
                 return redirect(reverse('new_space'))
-    except Exception as e:
+    except Exception:
         messages.error(request, "Error dealing with submission, please try again", extra_tags='alert-danger')
         logger.exception("Error in new_space - exception")
 
@@ -392,6 +400,11 @@ class SignupView(CreateView):
         kw['request'] = self.request
         return kw
 
+    def get_initial(self):
+        initial = self.request.session.get('signup_form', {})
+        self.request.session.flush()
+        return initial
+
     def form_valid(self, form):
         obj = form.save(commit=False)
         obj.set_password(User.objects.make_random_password())
@@ -411,6 +424,8 @@ class SignupView(CreateView):
             # This form sends the email on save()
             reset_form.save(**opts)
 
+            form.send_confirmation_email()
+
             return redirect(reverse_lazy('signup-done'))
         except Exception as e:
             # boo - most likely error is ConnectionRefused, but could be others
@@ -420,6 +435,8 @@ class SignupView(CreateView):
                            extra_tags='alert-danger')
             logger.exception("Error in SignupView - unable to send password reset email")
 
+            # store the values we already collected, so we can re-display the form:
+            self.request.session['signup_form'] = form.data
             return redirect(reverse_lazy('signup'))
 
 
@@ -447,7 +464,7 @@ def space_approval(request, key, action):
         }
         return render(request, 'user_space_verification/space_approval.html', context)
 
-    except User.DoesNotExist as e:
+    except User.DoesNotExist:
         # aargh - that's not right - redirect to home
         return redirect(reverse_lazy('index'))
 

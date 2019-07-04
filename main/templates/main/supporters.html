@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Supporters | {{ block.super }}{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Supporters</h1>
+
+        <p>The UK Hackspace Foundation would like to thank the following organisations for
+        their generous support:</p>
+
+        <h2>Financial Supporters</h2>
+        <div class="supporter-logo">
+          <a href="https://handshake.org/">
+            <img src="{% static "images/supporters/handshake.svg" %}" alt="Handshake">
+          </a>
+        </div>
+        <div class="supporter-logo">
+          <a href="https://www.emfcamp.org/">
+            <img src="{% static "images/supporters/emf.svg" %}" alt="Electromagnetic Field">
+          </a>
+        </div>
+        <h2>Other Supporters</h2>
+        <ul>
+          <li><a href="https://www.lulzbot.com/">Lulzbot</a></li>
+        </ul>
+    </div>
+{% endblock %}

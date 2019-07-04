@@ -1,21 +1,12 @@
 from django.db import models
-from django.conf import settings
 from django.utils import timezone
-import gocardless_pro
 import logging
 import uuid
 from .gocardless_payment import GocardlessPayment
+from .gocardless import get_gocardless_client
 
 # get instance of a logger
 logger = logging.getLogger(__name__)
-
-
-# utility functions:
-def get_gocardless_client():
-    return gocardless_pro.Client(
-        access_token=getattr(settings, "GOCARDLESS_ACCESS_TOKEN", None),
-        environment=getattr(settings, "GOCARDLESS_ENVIRONMENT", None)
-    )
 
 
 class GocardlessMandateManager(models.Manager):
@@ -60,7 +51,7 @@ class GocardlessMandateManager(models.Manager):
             obj.save()
             return obj
 
-        except Exception as e:
+        except Exception:
             logger.exception("Exception creating payment", extra={'payload': payload})
             return None
 
@@ -85,12 +76,12 @@ class GocardlessMandateManager(models.Manager):
                 mandate.status = info.status
                 mandate.save()
 
-            except GocardlessMandate.DoesNotExist as e:
+            except GocardlessMandate.DoesNotExist:
                 # shouldn't happen - just flag the error for now
                 # TODO: perhaps send an email to admin?
                 logger.exception("Mandate object not found", extra={'event': event})
 
-        except Exception as e:
+        except Exception:
             # odd - this should always be possible, perhaps there was a connection error
             logger.error("Exception fetching mandate info", extra={'event': event})
 
@@ -98,13 +89,13 @@ class GocardlessMandateManager(models.Manager):
 
 
 class GocardlessMandate(models.Model):
-    id = models.CharField(max_length=16, unique=True, primary_key=True)
+    id = models.TextField(unique=True, primary_key=True)
     created_at = models.DateTimeField(default=timezone.now)
-    reference = models.CharField(max_length=10, blank=True)
-    status = models.CharField(max_length=26, blank=True)
-    creditor_id = models.CharField(max_length=16, blank=True)
-    customer_id = models.CharField(max_length=16, blank=True)
-    customer_bank_account_id = models.CharField(max_length=16, blank=True)
+    reference = models.TextField(blank=True)
+    status = models.TextField(blank=True)
+    creditor_id = models.TextField(blank=True)
+    customer_id = models.TextField(blank=True)
+    customer_bank_account_id = models.TextField(blank=True)
     # which Supporter membership is this mandate associated with (or null)
     supporter_membership = models.ForeignKey('SupporterMembership', models.CASCADE, null=True)
     # which Space Membership is this mandate associated with (or null)
@@ -160,7 +151,7 @@ class GocardlessMandate(models.Model):
 
             return True
 
-        except Exception as e:
+        except Exception:
             logger.exception("Error in GocardlessMandate.cancel", extra={'mandate': self})
             return False
 
@@ -205,7 +196,7 @@ class GocardlessMandate(models.Model):
 
             return obj
 
-        except Exception as e:
+        except Exception:
             logger.exception("Error in GocardlessMandate.create_payment", extra={'mandate': self})
             return None
 

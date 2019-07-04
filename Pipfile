@@ -1,0 +1,23 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+flake8 = "*"
+ipython = "*"
+
+[packages]
+gunicorn = "*"
+python-telegram-bot = "*"
+requests = "*"
+dealer = "*"
+django-widget-tweaks = "*"
+Django = "< 2.1"
+Markdown = "*"
+gocardless_pro = "*"
+psycopg2-binary = "*"
+django-mathfilters = "*"
+
+[requires]
+python_version = "3.7"

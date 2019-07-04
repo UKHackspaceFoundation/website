@@ -1,14 +1,17 @@
-run: init
-	DJANGO_SETTINGS_MODULE=hsf.local_settings ./ENV/bin/python ./manage.py runserver
+DOCKER_RUN=docker-compose exec web pipenv run
 
-test:
-	./ENV/bin/flake8 ./main
+test: lint
+	$(DOCKER_RUN) ./manage.py test
 
-init: ENV/requirements.built
-	./ENV/bin/python ./manage.py migrate
+lint:
+	pipenv run flake8 ./main
 
-ENV/requirements.built: ENV requirements.txt
-	./ENV/bin/pip install -r ./requirements.txt && cp ./requirements.txt ./ENV/requirements.built
+ci: lint
+	pipenv run ./manage.py test
 
-ENV:
-	virtualenv -p python3 ./ENV
+shell:
+	$(DOCKER_RUN) ./manage.py shell
+
+deploy:
+	docker build . -f ./Dockerfile.prod -t ukhackspacefoundation/website:latest
+	docker push ukhackspacefoundation/website:latest
