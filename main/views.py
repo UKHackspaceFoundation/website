@@ -201,12 +201,16 @@ class JoinSpaceStep1(AccessMixin, CreateView):
             return self.handle_no_permission()
         # if user doesn't have a space then return to profile page
         if request.user.member_type is None:
-            messages.error(request, 'You can\'t apply for a space membership when you\'re not attached to a space', extra_tags='alert-danger')
+            messages.error(request,
+                           'You can\'t apply for a space membership when you\'re not attached to a space',
+                           extra_tags='alert-danger')
             logger.error("Error in JoinSupporterStep1 - user has no space",
                          extra={'user': request.user})
             return redirect(reverse('profile'))
-        elif request.user.space.membership_status() == 'Pending' or request.user.space.membership_status() == 'Approved':
-            messages.error(request, 'Your space has already applied for a space membership', extra_tags='alert-danger')
+        elif (request.user.space.membership_status() == 'Pending'
+              or request.user.space.membership_status() == 'Approved'):
+            messages.error(request, 'Your space has already applied for a space membership',
+                           extra_tags='alert-danger')
             logger.error("Error in JoinSpaceStep1 - user\'s space has an existing membership",
                          extra={'user': request.user})
             return redirect(reverse('profile'))
@@ -218,6 +222,7 @@ class JoinSpaceStep1(AccessMixin, CreateView):
         form.instance.applied_by = self.request.user
         form.instance.space = self.request.user.space
         return super().form_valid(form)
+
 
 @login_required
 def join_space_step2(request):
@@ -279,6 +284,7 @@ def join_space_step3(request):
                      extra={'space': request.user.space})
         return redirect(reverse('join_space_step1'))
 
+
 @staff_member_required(login_url='/login')
 def space_membership_approval(request, session_token, action):
     if action != 'approve' and action != 'reject':
@@ -323,6 +329,7 @@ def space_membership_approval(request, session_token, action):
         messages.error(request, "Error in space_approval: %s" % e, extra_tags='alert-danger')
         return redirect(reverse('error'))
 
+
 class JoinSupporterStep1(AccessMixin, CreateView):
     form_class = SupporterMembershipForm
     success_url = reverse_lazy('join_supporter_step2')
@@ -332,7 +339,10 @@ class JoinSupporterStep1(AccessMixin, CreateView):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
         # if user already has an active membership then return to profile page
-        if request.user.supporter_status() == 'Pending' or request.user.supporter_status() == 'Approved' or request.user.supporter_status() == 'Emailed':
+        if (request.user.supporter_status() == 'Pending'
+            or request.user.supporter_status() == 'Approved'
+            or request.user.supporter_status() == 'Emailed'):
+
             messages.error(request, 'You already have an active membership', extra_tags='alert-danger')
             logger.error("Error in JoinSupporterStep1 - user has an existing membership",
                          extra={'user': request.user})
@@ -344,6 +354,7 @@ class JoinSupporterStep1(AccessMixin, CreateView):
         # hook up the new application to the current user
         form.instance.user = self.request.user
         return super().form_valid(form)
+
 
 @login_required
 def space_membership_payment(request):

@@ -130,6 +130,7 @@ class SupporterMembershipForm(ModelForm):
             raise forms.ValidationError("Please write at least a few words :)")
         return data
 
+
 class SpaceMembershipForm(ModelForm):
     class Meta:
         model = SpaceMembership
