@@ -18,7 +18,7 @@ Copy `hsf/dev_settings.py.example` to `hsf/dev_settings.py`.
 
 If you want to test GoCardless payments, [there are instructions here](docs/gocardless.md).
 
-## Starting the App
+## Starting The App
 
 To get things up and running, run:
 
