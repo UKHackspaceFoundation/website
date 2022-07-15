@@ -99,13 +99,12 @@ class Space(models.Model):
             }
         }
 
-    # get membership type, returns: None, Supporter, Representative
+    # get membership type, returns: None, Member
     def member_type(self):
         if self.membership_status() != 'None':
             return 'Member'
         else:
             return 'None'
-        # TODO: implement Representative stuff
 
     # get membership status, will return a APPROVAL_STATUS_CHOICES value
     def membership_status(self):

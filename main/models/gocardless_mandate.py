@@ -24,7 +24,7 @@ class GocardlessMandateManager(models.Manager):
     def get_membership_status_for_supporter_membership(self, supporter_membership):
         return self.get_mandate_for_supporter_membership(supporter_membership).status
 
-        # get all mandate records for space membership
+    # get all mandate records for space membership
     def get_mandates_for_space_membership(self, space_membership):
         return super(GocardlessMandateManager, self).get_queryset().filter(
             space_membership=space_membership)

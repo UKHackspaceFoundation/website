@@ -340,8 +340,8 @@ class JoinSupporterStep1(AccessMixin, CreateView):
             return self.handle_no_permission()
         # if user already has an active membership then return to profile page
         if (request.user.supporter_status() == 'Pending'
-            or request.user.supporter_status() == 'Approved'
-            or request.user.supporter_status() == 'Emailed'):
+                or request.user.supporter_status() == 'Approved'
+                or request.user.supporter_status() == 'Emailed'):
 
             messages.error(request, 'You already have an active membership', extra_tags='alert-danger')
             logger.error("Error in JoinSupporterStep1 - user has an existing membership",
