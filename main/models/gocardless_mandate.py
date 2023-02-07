@@ -24,7 +24,20 @@ class GocardlessMandateManager(models.Manager):
     def get_membership_status_for_supporter_membership(self, supporter_membership):
         return self.get_mandate_for_supporter_membership(supporter_membership).status
 
-    # get_or_create that populates fields from json
+    # get all mandate records for space membership
+    def get_mandates_for_space_membership(self, space_membership):
+        return super(GocardlessMandateManager, self).get_queryset().filter(
+            space_membership=space_membership)
+
+    # get latest mandate for space_membership
+    def get_mandate_for_space_membership(self, space_membership):
+        return self.get_mandates_for_space_membership(space_membership).latest('created_at')
+
+    # get latest mandate status for space_membership or throw DoesNotExist
+    def get_membership_status_for_space_membership(self, space_membership):
+        return self.get_mandate_for_space_membership(space_membership).status
+
+# get_or_create that populates fields from json
     # e.g. as received from gocardless webhook or mandate creation api
     # payload should be a dict, e.g. parsed from webhook json
     def get_or_create_from_payload(self, payload):
@@ -99,7 +112,7 @@ class GocardlessMandate(models.Model):
     # which Supporter membership is this mandate associated with (or null)
     supporter_membership = models.ForeignKey('SupporterMembership', models.CASCADE, null=True)
     # which Space Membership is this mandate associated with (or null)
-    # TODO: ^^
+    space_membership = models.ForeignKey('SpaceMembership', models.CASCADE, null=True)
 
     # override default manager
     objects = GocardlessMandateManager()
@@ -131,7 +144,9 @@ class GocardlessMandate(models.Model):
     def is_supporter_mandate(self):
         return self.supporter_membership is not None
 
-    # TODO: is_space_mandate
+    # is_space_mandate
+    def is_space_mandate(self):
+        return self.space_membership is not None
 
     # is_active - is this mandate active
     def is_active(self):
@@ -206,3 +221,5 @@ class GocardlessMandate(models.Model):
         if payment.status == 'paid_out':
             if self.supporter_membership is not None:
                 self.supporter_membership.handle_payment_received(payment)
+            if self.space_membership is not None:
+                self.space_membership.handle_payment_received(payment)

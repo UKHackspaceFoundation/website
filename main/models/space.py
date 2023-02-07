@@ -2,6 +2,8 @@ from django.db import models
 from django.utils import timezone
 import logging
 
+from .space_membership import SpaceMembership
+
 # get instance of a logger
 logger = logging.getLogger(__name__)
 
@@ -96,3 +98,22 @@ class Space(models.Model):
                 "logo": self.logo_image_url
             }
         }
+
+    # get membership type, returns: None, Member
+    def member_type(self):
+        if self.membership_status() != 'None':
+            return 'Member'
+        else:
+            return 'None'
+
+    # get membership status, will return a APPROVAL_STATUS_CHOICES value
+    def membership_status(self):
+        return SpaceMembership.objects.get_membership_status(self)
+
+    # get latest membership record for this user
+    def current_membership(self):
+        return SpaceMembership.objects.get_membership(self)
+
+    # get all membership records for this user
+    def memberships(self):
+        return SpaceMembership.objects.get_memberships(self)
