@@ -57,7 +57,7 @@ u.save()
 
 This app uses [Poetry](https://python-poetry.org/) to manage dependencies. If you want
 to add or update dependencies, it's easiest to do so from your host machine (so 
-`pip3 install poetry` locally).
+[install Poetry](https://python-poetry.org/docs/) locally).
 
 To add a new dependency:
 
