@@ -14,11 +14,11 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v3
             - name: Start containers
-              uses: isbang/compose-action@v1.4.1
-              with:
-                up-flags: "--build"
-                down-flags: "--volumes"
+              run: docker compose up -d --build
             - name: Run tests
               run: |
                 docker compose exec -T web poetry run flake8 ./main
                 docker compose exec -T web poetry run ./manage.py test
+            - name: Stop containers
+              if: always()
+              run: docker compose down
