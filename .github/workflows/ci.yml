@@ -1,33 +1,24 @@
-name: UKHF Website CI
+name: Main
 
 on:
     [push, pull_request]
 
 env:
     DJANGO_SETTINGS_MODULE: hsf.test_settings
+    COMPOSE_INTERACTIVE_NO_CLI: 1
 
 jobs:
     build:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v3
-            - name: Setup Python
-              uses: actions/setup-python@v4
+            - name: Checkout
+              uses: actions/checkout@v3
+            - name: Start containers
+              uses: isbang/compose-action@v1.4.1
               with:
-                  python-version: '3.7'
-            - name: Setup Postgres
-              uses: CasperWA/postgresql-action@v1.2
-              with:
-                postgresql version: '9.5'
-                postgresql db: postgres
-                postgresql user: postgres
-                postgresql password: postgres
-            - name: Install dependencies
+                up-flags: "--build"
+                down-flags: "--volumes"
+            - name: Run tests
               run: |
-                python -m pip install --upgrade pip
-                pip install pipenv
-                pipenv sync --dev
-            - name: Lint with flake8
-              run: |
-                pipenv run flake8 ./main
-                pipenv run ./manage.py test
+                docker-compose exec web poetry run flake8 ./main
+                docker-compose exec web poetry run ./manage.py test

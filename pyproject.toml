@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "hackspace-foundation-website"
+version = "0.1.0"
+description = ""
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+gunicorn = "*"
+python-telegram-bot = "*"
+requests = "*"
+dealer = "*"
+django-widget-tweaks = "*"
+Django = "~= 2.2"
+Markdown = "*"
+gocardless_pro = "*"
+psycopg2-binary = "*"
+django-mathfilters = "*"
+
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "*"
+ipython = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

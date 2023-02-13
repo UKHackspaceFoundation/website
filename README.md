@@ -1,14 +1,9 @@
-[![Build Status](https://travis-ci.org/UKHackspaceFoundation/website.svg?branch=master)](https://travis-ci.org/UKHackspaceFoundation/website)
-
 This is the website for the [UK Hackspace Foundation](hackspace.org.uk).
 
 # Development
 
 ## Requirements
-You'll need a development environment with PostgreSQL (ideally 9.5) and Python 3
-(ideally 3.7).
-
-The easiest way of getting a consistent development enviroment is to use Docker. You'll
+The easiest way of getting a consistent development environment is to use Docker. You'll
 need Docker and docker-compose installed locally (install it 
 [from here](https://store.docker.com/search?type=edition&offering=community)).
 
@@ -60,17 +55,17 @@ u.save()
 
 ## Managing Dependencies
 
-This app uses [Pipenv](https://pipenv.readthedocs.io) to manage dependencies. If you want
+This app uses [Poetry](https://python-poetry.org/) to manage dependencies. If you want
 to add or update dependencies, it's easiest to do so from your host machine (so 
-`pip3 install pipenv` locally).
+`pip3 install poetry` locally).
 
 To add a new dependency:
 
-	$ pipenv install <dependencyname>
+	$ poetry add <dependencyname>
 
 To update all dependencies to their latest versions:
 
-	$ pipenv install
+	$ poetry lock
 
 Once you've updated dependencies, you'll need to rebuild the Docker image by re-running
 `docker-compose up --build` (you don't need to run `docker-compose down`).
