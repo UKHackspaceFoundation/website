@@ -20,5 +20,5 @@ jobs:
                 down-flags: "--volumes"
             - name: Run tests
               run: |
-                docker-compose exec web poetry run flake8 ./main
-                docker-compose exec web poetry run ./manage.py test
+                docker compose exec -T web poetry run flake8 ./main
+                docker compose exec -T web poetry run ./manage.py test
