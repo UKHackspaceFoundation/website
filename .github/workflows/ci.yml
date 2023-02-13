@@ -13,8 +13,12 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v3
+            - name: Build dev containers
+              run: |
+                docker buildx create --use --driver=docker-container
+                docker buildx bake -f ./docker-compose.yml --set *.cache-to="type=gha,mode=max" --set *.cache-from="type=gha" --load
             - name: Start containers
-              run: docker compose up -d --build
+              run: docker compose up -d
             - name: Run tests
               run: |
                 docker compose exec -T web poetry run flake8 ./main
@@ -37,3 +41,5 @@ jobs:
                   file: ./docker/Dockerfile.prod
                   push: true
                   tags: ghcr.io/ukhackspacefoundation/website:latest
+                  cache-to: type=gha,mode=max
+                  cache-from: type=gha
