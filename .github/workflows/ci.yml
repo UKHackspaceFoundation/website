@@ -22,3 +22,18 @@ jobs:
             - name: Stop containers
               if: always()
               run: docker compose down
+            - name: Login to container registry
+              if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+              uses: docker/login-action@v1
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+            - name: Build and push production container
+              if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+              uses: docker/build-push-action@v2
+              with:
+                  context: .
+                  file: ./docker/Dockerfile.prod
+                  push: true
+                  tags: ghcr.io/ukhackspacefoundation/website:latest

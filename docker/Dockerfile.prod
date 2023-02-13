@@ -1,7 +1,7 @@
-FROM python:3.7-alpine AS base
+FROM python:3.9-alpine AS base
 WORKDIR /usr/src/app
 
-RUN pip install --no-cache-dir pipenv \
+RUN pip install --no-cache-dir poetry \
     && apk add --no-cache postgresql-client
 
 COPY . .
@@ -19,7 +19,6 @@ RUN apk add --no-cache --virtual .build-deps  \
 		libc-dev \
 		libffi-dev \
 		libnsl-dev \
-		libressl-dev \
 		libtirpc-dev \
 		linux-headers \
 		make \
@@ -34,10 +33,10 @@ RUN apk add --no-cache --virtual .build-deps  \
 		xz-dev \
 		zlib-dev \
 		postgresql-dev \
-	&& pipenv sync \
+	&& poetry install \
 	&& apk del .build-deps \
 	&& rm -Rf /.cache
 
 EXPOSE 8000
-ENTRYPOINT ["pipenv", "run"]
+ENTRYPOINT ["poetry", "run"]
 CMD ["./docker/start_prod.sh"]
