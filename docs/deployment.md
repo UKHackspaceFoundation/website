@@ -1,13 +1,8 @@
 # Deployment
 
-Successful builds on the master branch will be automatically built into a
-docker image and pushed to Docker Hub by Travis.
-
-To deploy this image on the web server:
-
-	# cd /root/hsf_website
-	# docker pull ukhackspacefoundation/website:latest
-	# docker-compose down && docker-compose up -d
+Successful builds on the `main` branch will be automatically built as a
+docker image and pushed to github container registry. This is then
+automatically deployed by watchtower.
 
 You can view logs with:
 	
