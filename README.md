@@ -4,7 +4,7 @@ This is the website for the [UK Hackspace Foundation](hackspace.org.uk).
 
 ## Requirements
 The easiest way of getting a consistent development environment is to use Docker. You'll
-need Docker and docker-compose installed locally (install it 
+need Docker installed locally (install it 
 [from here](https://store.docker.com/search?type=edition&offering=community)).
 
 ## Setup
@@ -17,7 +17,7 @@ If you want to test GoCardless payments, [there are instructions here](docs/goca
 
 To get things up and running, run:
 
-	$ docker-compose up --build
+	$ docker compose up --build
 
 This will download and run a separate containerised Postgres instance, and will show all the logs
 in the console. Once it's running, you should now be able to access your development site at 
@@ -25,7 +25,7 @@ in the console. Once it's running, you should now be able to access your develop
 copy should be automatically reloaded.
 
 If you `Ctrl+c` the process, it'll stop the containers. If you run
-`docker-compose down`, it'll destroy the containers *along with your development database*.
+`docker compose down`, it'll destroy the containers *along with your development database*.
 
 Any emails sent by the app will be printed to the console.
 
@@ -68,7 +68,7 @@ To update all dependencies to their latest versions:
 	$ poetry lock
 
 Once you've updated dependencies, you'll need to rebuild the Docker image by re-running
-`docker-compose up --build` (you don't need to run `docker-compose down`).
+`docker compose up --build` (you don't need to run `docker compose down`).
 
 # Deployment
 

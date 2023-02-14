@@ -1,4 +1,4 @@
-DOCKER_RUN=docker-compose exec web poetry run
+DOCKER_RUN=docker compose exec web poetry run
 
 test: lint
 	$(DOCKER_RUN) ./manage.py test
