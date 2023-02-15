@@ -7,6 +7,11 @@ The easiest way of getting a consistent development environment is to use Docker
 need Docker installed locally (install it 
 [from here](https://store.docker.com/search?type=edition&offering=community)).
 
+If you don't want to use Docker, the current software dependencies are:
+* Python 3.7
+* Postgres 15
+* [Poetry](https://python-poetry.org/)
+
 ## Setup
 
 Copy `hsf/dev_settings.py.example` to `hsf/dev_settings.py`.
