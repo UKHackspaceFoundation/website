@@ -51,38 +51,34 @@ urlpatterns = [
     ),
     url(
         r"^signup-done/$",
-        authviews.PasswordResetDoneView,
-        {
-            "template_name": "signup/signup_done.html",
-        },
+        authviews.PasswordResetDoneView.as_view(
+            template_name="signup/signup_done.html"
+        ),
         name="signup-done",
     ),
     url(
         r"^signup/password/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$",
-        authviews.PasswordResetConfirmView,
-        {
-            "template_name": "password_reset/password_reset_confirm.html",
-            "post_reset_redirect": "signup-complete",
-        },
+        authviews.PasswordResetConfirmView.as_view(
+            template_name="password_reset/password_reset_confirm.html",
+            success_url=reverse_lazy("signup-complete")
+        ),
         name="password-reset-confirm",
     ),
     url(
         r"^signup-complete$",
-        authviews.PasswordResetCompleteView,
-        {
-            "template_name": "signup/signup_complete.html",
-        },
+        authviews.PasswordResetCompleteView.as_view(
+            template_name="signup/signup_complete.html"
+        ),
         name="signup-complete",
     ),
     url(
         r"^password-reset$",
-        authviews.PasswordResetView,
-        {
-            "template_name": "password_reset/password_reset.html",
-            "post_reset_redirect": "signup-done",
-            "email_template_name": "password_reset/password_reset_email.html",
-            "subject_template_name": "password_reset/password_reset_subject.txt",
-        },
+        authviews.PasswordResetView.as_view(
+            template_name="password_reset/password_reset.html",
+            success_url=reverse_lazy("signup-done"),
+            email_template_name="password_reset/password_reset_email.html",
+            subject_template_name="password_reset/password_reset_subject.txt",
+        ),
         name="password-reset",
     ),
     url(
