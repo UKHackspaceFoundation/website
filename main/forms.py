@@ -100,9 +100,9 @@ class CustomUserCreationForm(ModelForm):
                 msg = EmailMessage(subject, message, to=[to], from_email=from_email)
                 msg.content_subtype = 'html'
                 msg.send()
-            except Exception as e:
+            except Exception:
                 # TODO: oh dear - how should we handle this gracefully?!?
-                print("Error sending email" + str(e))
+                logger.exception("Error sending email")
 
 
 class SupporterMembershipForm(ModelForm):
