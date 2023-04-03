@@ -135,5 +135,18 @@ class NewSpaceForm(forms.Form):
     address = forms.CharField(widget=forms.Textarea, required=True)
     have_premises = forms.BooleanField(required=False)
     notes = forms.CharField(widget=forms.Textarea, required=False)
-    lat = forms.DecimalField(max_digits=10, decimal_places=7, initial=54.1)
-    lng = forms.DecimalField(max_digits=10, decimal_places=7, initial=-2.1)
+    lat = forms.DecimalField(min_value=1.92, max_value=62.95, max_digits=10, decimal_places=7, initial=51.28)
+    lng = forms.DecimalField(min_value=-10.87, max_value=49.74, max_digits=10, decimal_places=7, initial=-3.19)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        print(cleaned_data)
+        lat = cleaned_data.get('lat')
+        lng = cleaned_data.get('lng')
+
+        if float(lat) == 51.28 and float(lng) == -3.19:
+            print('They match')
+            raise forms.ValidationError(
+                "You have not picked your location on the map, please do so"
+            )
+        return cleaned_data
