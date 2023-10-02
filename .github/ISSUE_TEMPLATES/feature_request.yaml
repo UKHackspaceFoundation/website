@@ -1,0 +1,58 @@
+name: Feature Request
+description: Ask for new things or improvements to be added
+title: "[Feature]: "
+labels: ["feature", "triage"]
+projects: ["UKHackspaceFoundation/2"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to create this feature request!
+  - type: input
+    id: contact
+    attributes:
+      label: Contact Details
+      description: How can we get in touch with you if we need more info?
+      placeholder: ex. email@example.com
+    validations:
+      required: false
+  - type: input
+    id: who
+    attributes:
+      label: As a: 
+      description: Who will be using this feature?
+      placeholder: This could be a "space member", "space manager", "a member of the public", or any other role you can think of
+    validations:
+      required: true
+  - type: input
+    id: what
+    attributes:
+      label: I Want:
+      description: What does the person want to achieve?
+      placeholder: "Don't get too technical, this should be something like 'to find my local hackspace' or 'be able to pay my UKHSF membership fees'."
+    validations:
+      required: true
+  - type: input
+    id: why
+    attributes:
+      label: So that:
+      description: Why do you want this feature?
+      placeholder: "Again, don't get too technical, this could be something like 'so I can become a member' or 'so I know my hackspace is part of the foundation'."
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: Do you already have an idea of how this might be achieved? If so, add it here.
+      placeholder: "We could achieve this by..."
+    validations:
+      required: false
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: Anything else?
+      description: What else do we need to know in order to complete this?
+      placeholder: "You might want to know that..."
+    validations:
+      required: false
