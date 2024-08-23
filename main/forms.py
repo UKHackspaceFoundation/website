@@ -8,6 +8,7 @@ from django.conf import settings
 import uuid
 from django.urls import reverse
 from django import forms
+from simplemathcaptcha.fields import MathCaptchaField
 import logging
 
 # get instance of a logger
@@ -137,3 +138,4 @@ class NewSpaceForm(forms.Form):
     notes = forms.CharField(widget=forms.Textarea, required=False)
     lat = forms.DecimalField(max_digits=10, decimal_places=7, initial=54.1)
     lng = forms.DecimalField(max_digits=10, decimal_places=7, initial=-2.1)
+    captcha = MathCaptchaField()
