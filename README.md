@@ -75,6 +75,16 @@ To update all dependencies to their latest versions:
 Once you've updated dependencies, you'll need to rebuild the Docker image by re-running
 `docker compose up --build` (you don't need to run `docker compose down`).
 
+## Installing & Running without docker
+
+To install dependencies locally, use:
+
+    $ make nd_deps
+
+To run the website on port 8000:
+
+    $ make nd_run
+
 # Deployment
 
 See [docs/deployment.md](docs/deployment.md) for deployment info.
